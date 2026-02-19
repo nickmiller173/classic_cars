@@ -1,5 +1,7 @@
 import pandas as pd
 import re
+from datetime import datetime
+import numpy as np
 
 
 def clean_currency(x):
@@ -222,5 +224,79 @@ def engineer_sharp_features(df):
 
     # Drop the temporary blob to keep things clean
     df = df.drop(columns=['full_text_blob'])
+    
+    return df
+
+def clean_date(x):
+    """
+    Robustly extracts date from strings like 'Feb 18, 2026 1:48 PM MST'.
+    Ignores time and timezone.
+    """
+    if pd.isna(x):
+        return None
+
+    x = str(x).strip()
+
+    # REGEX STRATEGY: Look for "Mmm DD, YYYY" pattern
+    # This matches "Feb 18, 2026" inside the longer string
+    match = re.search(r'([A-Za-z]{3}\s+\d{1,2},\s+\d{4})', x)
+
+    if match:
+        date_str = match.group(1) # "Feb 18, 2026"
+        try:
+            return datetime.strptime(date_str, "%b %d, %Y")
+        except ValueError:
+            return None
+
+    # Fallback for ISO dates (2026-02-18) just in case
+    try:
+        return datetime.strptime(x, "%Y-%m-%d")
+    except ValueError:
+        return None
+
+def engineer_date_features(df, is_inference=False):
+    """
+    Extracts Year, Month, and calculates Car Age.
+    NOW INCLUDES: Logic to grab Model Year from the "THIS... is a..." intro.
+    """
+    df = df.copy()
+    
+    # 1. Date Parsing (Auction End Date)
+    if 'Auction_Date' not in df.columns:
+        df['Auction_Date'] = None
+
+    cleaned_dates = df['Auction_Date'].apply(clean_date)
+    
+    if is_inference:
+        cleaned_dates = cleaned_dates.fillna(datetime.now())
+    
+    df['date_obj'] = pd.to_datetime(cleaned_dates)
+    df['auction_year'] = df['date_obj'].dt.year
+    df['auction_month'] = df['date_obj'].dt.month
+    
+    # 2. Extract Model Year (The "THIS... is a 1998" Logic)
+    def extract_year_from_text(row):
+        # Strategy A: Look for "THIS… is a 1998" in Highlights
+        # We check for both ellipsis character (…) and standard dots (...)
+        text = str(row.get('Highlights', ''))
+        match = re.search(r'THIS[…\.]+\s+is\s+a\s+(\d{4})', text, re.IGNORECASE)
+        if match:
+            return float(match.group(1))
+
+        return None
+
+    df['model_year'] = df.apply(extract_year_from_text, axis=1)
+
+    # 3. Calculate "Age at Sale"
+    # If we still can't find the year, we default to the auction year (age=0) to prevent errors
+    df['model_year'] = df['model_year'].fillna(df['auction_year'])
+    
+    df['car_age'] = df['auction_year'] - df['model_year']
+    
+    # Sanity Check: If age is negative (e.g. 2024 model sold in 2023), clamp to 0
+    df['car_age'] = df['car_age'].apply(lambda x: max(x, 0))
+        
+    # Cleanup
+    df = df.drop(columns=['date_obj', 'model_year']) # We drop model_year because 'car_age' is the better predictor
     
     return df

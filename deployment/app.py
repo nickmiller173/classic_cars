@@ -2,7 +2,7 @@ import json
 import pickle
 import pandas as pd
 import numpy as np
-from utils import clean_mileage, get_main_color, extract_engine_info, engineer_sharp_features # Import your helpers
+from utils import clean_mileage, get_main_color, extract_engine_info, engineer_sharp_features, engineer_date_features # Import your helpers
 
 # Load artifacts ONCE (global scope) to speed up warm starts
 with open('model_artifacts_001.pkl', 'rb') as f:
@@ -20,6 +20,7 @@ def lambda_handler(event, context):
     # 1. Parse Input
     body = json.loads(event['body'])
     input_df = pd.DataFrame([body]) # Convert dict to single-row DataFrame
+    input_df = engineer_date_features(input_df, is_inference=True)
     input_df = engineer_sharp_features(input_df)
 
     # 2. Apply cleaning (Use functions from utils.py)
