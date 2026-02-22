@@ -158,29 +158,12 @@ def engineer_sharp_features(df):
     df['full_text_blob'] = df[text_cols].apply(lambda x: ' '.join(x), axis=1)
 
     # 2. Boolean Flags (The Multipliers)
-    df['is_single_owner'] = df['Ownership History'].apply(
-        lambda x: 1 if re.search(r'\b(single|one|1)\s+(owner|ownership)\b', x) else 0
-    )
     df['2_keys_ind'] = df['Other Items Included in Sale'].apply(
     lambda x: 1 if re.search(r'\b(2 keys|3 keys)\b', x) else 0
     )
 
     df['is_dry_climate_car'] = df['full_text_blob'].apply(
         lambda x: 1 if re.search(r'\b(california|arizona|texas|nevada|dry state|no rust)\b', x) else 0
-    )
-
-    df['has_full_service_records'] = df['full_text_blob'].apply(
-        lambda x: 1 if re.search(r'\b(binder|folder|stack|full service history|records from new)\b', x) else 0
-    )
-
-    df['is_no_reserve'] = df['full_text_blob'].apply(lambda x: 1 if "no reserve" in x else 0)
-
-    df['is_all_original'] = df['full_text_blob'].apply(
-        lambda x: 1 if re.search(r'\b(all original|survivor|time capsule|unrestored)\b', x) else 0
-    )
-
-    df['is_numbers_matching'] = df['full_text_blob'].apply(
-        lambda x: 1 if re.search(r'\b(numbers matching|matching numbers)\b', x) else 0
     )
 
     df['is_project_car'] = df['full_text_blob'].apply(

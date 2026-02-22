@@ -60,6 +60,15 @@ if submitted:
         "Gears": str(gears),
         "Engine_Displacement_L": str(displacement),
         "Engine_Cylinders": engine_cyl
+        "Year": year, # Add this!
+        "Highlights": "Paste from carsandbids.com",
+        "Equipment": "Paste from carsandbids.com",
+        "Known Flaws": "Paste from carsandbids.com",
+        "Modifications": "Paste from carsandbids.com",
+        "Recent Service History": "Paste from carsandbids.com",
+        "Ownership History": "Paste from carsandbids.com",
+        "Other Items Included in Sale": "Paste from carsandbids.com",
+        "Seller Notes": "Paste from carsandbids.com",
     }
 
     st.info("Sending data to AI model...")
