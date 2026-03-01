@@ -63,6 +63,10 @@ def engineer_sharp_features(df):
     lambda x: 1 if re.search(r'\b(2 keys|3 keys)\b', x) else 0
     )
 
+    df['owners_manual_ind'] = df['Other Items Included in Sale'].apply(
+    lambda x: 1 if re.search(r'\b(manual|owners)\b', x) else 0
+    )
+
     df['is_dry_climate_car'] = df['full_text_blob'].apply(
         lambda x: 1 if re.search(r'\b(california|arizona|texas|nevada|dry state|no rust)\b', x) else 0
     )
