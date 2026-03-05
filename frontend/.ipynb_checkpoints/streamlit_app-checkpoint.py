@@ -7,7 +7,7 @@ API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPri
 
 st.set_page_config(page_title="Classic Car Price Predictor", page_icon="🚗", layout="wide")
 
-st.title("🚗 Cars&Bids.com: Car Auction Price Estimator")
+st.title("🚗 Classic Car Price Estimator")
 st.write("Enter the vehicle specifications and paste the auction text below.")
 
 with st.form("car_form"):
@@ -29,7 +29,7 @@ with st.form("car_form"):
         interior_color = st.selectbox("Interior Color", 
             ['Black', 'Beige', 'Gray', 'Brown', 'Red', 'White', 'Blue', 'Other'])
         
-        # One-Hot Encoded Fields (Strict matching to preprocessing.ipynb)
+        # One-Hot Encoded Fields (Strict matching to backend)
         title_status = st.selectbox("Title Status", ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"])
         seller_type = st.selectbox("Seller Type", ["Private Party", "Dealer", "Other"])
         drivetrain = st.selectbox("Drivetrain", ["Rear-wheel drive", "4WD/AWD", "Front-wheel drive"])
@@ -69,7 +69,6 @@ if submitted:
         "Year": year,
         "Mileage": mileage, 
         "State": state.strip().upper(),
-        
         "Exterior Color": exterior_color,
         "Interior Color": interior_color,
         "Title Status": title_status,
@@ -78,10 +77,8 @@ if submitted:
         "Body Style": body_style,
         "Transmission_Type": transmission,
         "Engine_Cylinders": engine_cyl,
-        
         "Gears": float(gears),
         "Engine_Displacement_L": float(displacement),
-        
         "Highlights": highlights,
         "Equipment": equipment,
         "Known Flaws": flaws,
