@@ -2,56 +2,92 @@ import json
 import pickle
 import pandas as pd
 import numpy as np
-from utils import clean_mileage, get_main_color, extract_engine_info, engineer_sharp_features, engineer_date_features # Import your helpers
+from datetime import datetime
+from utils import engineer_sharp_features
 
-# Load artifacts ONCE (global scope) to speed up warm starts
-with open('model_artifacts_001.pkl', 'rb') as f:
+# 1. Load Artifacts
+with open('model_artifacts_002.pkl', 'rb') as f:
     model_artifacts = pickle.load(f)
 
-with open('encoding_artifacts_001.pkl', 'rb') as f:
+with open('encoding_artifacts_002.pkl', 'rb') as f:
     encoding_artifacts = pickle.load(f)
 
 model = model_artifacts['model']
-l_encoders = encoding_artifacts['label_encoders']
-t_map = encoding_artifacts['target_encoder_map']
 train_cols = model_artifacts['training_columns']
+label_encoders = encoding_artifacts['label_encoders']
+tfidf_vectorizer = encoding_artifacts['tfidf_vectorizer'] # NEW: Load TF-IDF
+svd_model = encoding_artifacts['svd_model']               # NEW: Load SVD
 
 def lambda_handler(event, context):
-    # 1. Parse Input
     body = json.loads(event['body'])
-    input_df = pd.DataFrame([body]) # Convert dict to single-row DataFrame
-    input_df = engineer_date_features(input_df, is_inference=True)
-    input_df = engineer_sharp_features(input_df)
-
-    # 2. Apply cleaning (Use functions from utils.py)
-    input_df['Mileage'] = input_df['Mileage'].apply(clean_mileage)
-    # ... apply all other cleaning functions matching preprocessing.ipynb ...
-
-    # 3. Apply Label Encoding
-    for col, le in l_encoders.items():
-        # Handle unseen labels safely (e.g. map to "Unknown" or mode)
-        input_df[col] = input_df[col].apply(lambda x: x if x in le.classes_ else 'Unknown') 
-        # Note: You might need to add 'Unknown' class to your encoders during training
-        input_df[col] = le.transform(input_df[col])
-
-    # 4. Apply Target Encoding
-    # Map model name to average price. If unknown model, use overall mean.
-    global_mean = t_map.mean()
-    input_df['Model_Target_Encoded'] = input_df['Model'].map(t_map).fillna(global_mean)
-    input_df = input_df.drop(columns=['Model'])
-
-    # 5. Apply One-Hot Encoding & Alignment
-    # This generates dummies for this SINGLE row
-    input_df = pd.get_dummies(input_df)
+    input_df = pd.DataFrame([body]) 
     
-    # CRITICAL: Reindex aligns this single row to the 50+ columns the model expects
-    # It adds missing columns (filling with 0) and drops extra ones
+    # 2. Recreate missing calculated features 
+    current_year = datetime.now().year
+    model_year = float(input_df['Year'].iloc[0])
+    
+    input_df['car_age'] = max(current_year - model_year, 0)
+    input_df['mileage_per_year'] = float(input_df['Mileage'].iloc[0]) / (input_df['car_age'] + 0.5)
+    
+    input_df['flaw_count'] = input_df['Known Flaws'].apply(
+        lambda x: len(str(x).split(',')) if pd.notna(x) and str(x).strip() != '' else 0
+    )
+    
+    # --- 3. NLP Text Blob Creation ---
+    text_cols = ['Highlights', 'Equipment', 'Modifications', 'Known Flaws', 
+                 'Recent Service History', 'Ownership History', 'Seller Notes', 'Other Items Included in Sale']
+    
+    # Fill missing text fields and lower (prevents inference crash)
+    for col in text_cols:
+        if col not in input_df.columns:
+            input_df[col] = ""
+        input_df[col] = input_df[col].astype(str).fillna('').str.lower()
+    
+    # Create the blob before engineer_sharp_features drops it
+    text_blob = input_df[text_cols].apply(lambda x: ' '.join(x), axis=1)
+
+    # 4. Sharp features and Boolean flags from utils.py
+    input_df = engineer_sharp_features(input_df)
+    
+    # S&P 500 Placeholder & Auction Month proxy
+    input_df['SP500_Close'] = 5000.0 
+    input_df['auction_month'] = datetime.now().month
+    input_df['auction_year'] = datetime.now().year
+
+    # 5. Apply Label Encoders safely to Colors
+    for col in ['Exterior Color', 'Interior Color']:
+        le = label_encoders.get(col)
+        if le and col in input_df.columns:
+            val = input_df[col].iloc[0]
+            if val in le.classes_:
+                input_df[col] = le.transform([val])[0]
+            elif 'Other' in le.classes_:
+                input_df[col] = le.transform(['Other'])[0]
+            else:
+                input_df[col] = -1
+
+    # 6. Create One-Hot Encodings
+    one_hot_cols = ['Title Status', 'Seller Type', 'Drivetrain', 'Transmission_Type', 
+                    'Body Style', 'Engine_Cylinders', 'mod_status', 'auction_month']
+    
+    input_df = pd.get_dummies(input_df, columns=[c for c in one_hot_cols if c in input_df.columns])
+    
+    # --- 7. Apply Text Embeddings ---
+    # Transform the text blob into sparse TF-IDF, then reduce to dense 10 SVD components
+    tfidf_matrix = tfidf_vectorizer.transform(text_blob)
+    text_embeddings = svd_model.transform(tfidf_matrix)
+    
+    for i in range(10):
+        input_df[f'text_component_{i}'] = text_embeddings[:, i]
+        
+    # 8. Align to the exact columns the XGBoost Pipeline expects
     input_df = input_df.reindex(columns=train_cols, fill_value=0)
 
-    # 6. Predict
-    prediction = model.predict(input_df)
+    # 9. Predict & Reverse Log Transform
+    prediction_log = model.predict(input_df)
+    estimated_price = np.expm1(prediction_log[0])
 
     return {
         'statusCode': 200,
-        'body': json.dumps({'estimated_price': prediction[0]})
+        'body': json.dumps({'estimated_price': float(estimated_price)})
     }
