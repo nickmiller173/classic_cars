@@ -13,11 +13,11 @@ st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", pa
 @st.cache_data
 def load_car_data():
     # Adjust this path if your Streamlit app runs from the root directory instead of the frontend directory
-    file_path = "../data/train_data.csv"
+    file_path = "../../data/train_data.csv"
     
     # Fallback in case the path is different in Streamlit Cloud
     if not os.path.exists(file_path):
-        file_path = "data/train_data.csv"
+        file_path = "../data/train_data.csv"
         
     try:
         return pd.read_csv(file_path)
