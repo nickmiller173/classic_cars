@@ -17,7 +17,7 @@ hide_st_style = """
             header {visibility: hidden;}
             </style>
             """
-st.markdown(hide_st_style, unsafe_allow_html=True)
+# st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # --- DATA LOADING ---
 @st.cache_data
@@ -44,7 +44,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if not df_cars.empty and 'Make' in df_cars.columns:
         makes = sorted(df_cars['Make'].dropna().unique().tolist())
-        default_make_idx = makes.index("MG") if "MG" in makes else 0
+        default_make_idx = makes.index("Porsche") if "Porsche" in makes else 0
         make = st.selectbox("Make", makes, index=default_make_idx)
         
         models = sorted(df_cars[df_cars['Make'] == make]['Model'].dropna().unique().tolist())
