@@ -9,16 +9,6 @@ API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPri
 
 st.set_page_config(page_title="Classic Car Price Predictor", page_icon="🚗", layout="wide")
 
-# Hide Streamlit's default menu and footer for a cleaner, white-label look
-hide_st_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-# st.markdown(hide_st_style, unsafe_allow_html=True)
-
 # --- DATA LOADING ---
 @st.cache_data
 def load_car_data():
@@ -34,11 +24,13 @@ def load_car_data():
 
 df_cars = load_car_data()
 
-st.title("🚗 Classic Car Price Estimator")
-st.write("Enter the vehicle specifications and paste the auction text below.")
+# --- UI HEADER ---
+st.title("🚗 Classic Car Market Estimator")
+st.markdown("Instantly estimate the auction value of a classic car based on its specs and historical condition reports.")
+st.divider()
 
-# --- UI COMPONENTS ---
-st.subheader("1. Vehicle Specifications")
+# --- VEHICLE SPECS ---
+st.subheader("📋 1. Vehicle Specifications")
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -88,24 +80,29 @@ with col3:
     gears = st.slider("Gears", 1, 10, 6)
     displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
 
-st.markdown("---")
-st.subheader("2. Auction Description (Raw Text)")
-st.caption("Paste the exact text from the auction listing. The AI will automatically extract features like mods, flaws, and condition indicators.")
+st.divider()
 
-text_col1, text_col2 = st.columns(2)
-with text_col1:
-    highlights = st.text_area("Highlights")
-    equipment = st.text_area("Equipment")
-    flaws = st.text_area("Known Flaws")
-    modifications = st.text_area("Modifications")
-with text_col2:
-    service_history = st.text_area("Recent Service History")
-    ownership_history = st.text_area("Ownership History")
-    included_items = st.text_area("Other Items Included in Sale")
-    seller_notes = st.text_area("Seller Notes")
+# --- AUCTION TEXT ---
+st.subheader("📝 2. Auction Description")
+st.info("Paste the exact text from the listing. The app will extract features like mods, flaws, and condition indicators.")
+
+with st.expander("Click to expand and paste auction text blocks", expanded=True):
+    text_col1, text_col2 = st.columns(2)
+    with text_col1:
+        highlights = st.text_area("Highlights")
+        equipment = st.text_area("Equipment")
+        flaws = st.text_area("Known Flaws")
+        modifications = st.text_area("Modifications")
+    with text_col2:
+        service_history = st.text_area("Recent Service History")
+        ownership_history = st.text_area("Ownership History")
+        included_items = st.text_area("Other Items Included in Sale")
+        seller_notes = st.text_area("Seller Notes")
 
 st.markdown("<br>", unsafe_allow_html=True)
-submitted = st.button("💰 Predict Market Price", use_container_width=True)
+
+# --- SUBMISSION LOGIC ---
+submitted = st.button("💰 Predict Market Price", type="primary", use_container_width=True)
 
 if submitted:
     payload = {
@@ -134,7 +131,7 @@ if submitted:
         "Seller Notes": seller_notes
     }
 
-    with st.spinner("Analyzing auction text and generating prediction..."):
+    with st.spinner("Analyzing data and communicating with AWS Lambda..."):
         try:
             response = requests.post(API_URL, json=payload)
             
@@ -150,7 +147,7 @@ if submitted:
                     st.error(f"Unexpected response format: {result}")
 
                 if price > 0:
-                    st.markdown("---")
+                    st.success("Analysis Complete!")
                     st.metric(label="Estimated Auction Value", value=f"${price:,.2f}")
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
