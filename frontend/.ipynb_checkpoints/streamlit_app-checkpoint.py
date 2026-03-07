@@ -7,15 +7,22 @@ import os
 # --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
 
-st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", page_icon="🚗", layout="wide")
+st.set_page_config(page_title="Classic Car Price Predictor", page_icon="🚗", layout="wide")
+
+# Hide Streamlit's default menu and footer for a cleaner, white-label look
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # --- DATA LOADING ---
 @st.cache_data
 def load_car_data():
-    # Path if running from inside the 'frontend' folder locally
     file_path = "../data/dropdown_options.csv"
-    
-    # Fallback path if Streamlit Cloud runs from the root folder
     if not os.path.exists(file_path):
         file_path = "data/dropdown_options.csv"
         
@@ -37,21 +44,19 @@ col1, col2, col3 = st.columns(3)
 with col1:
     if not df_cars.empty and 'Make' in df_cars.columns:
         makes = sorted(df_cars['Make'].dropna().unique().tolist())
-        default_make_idx = makes.index("Porsche") if "Porsche" in makes else 0
+        default_make_idx = makes.index("MG") if "MG" in makes else 0
         make = st.selectbox("Make", makes, index=default_make_idx)
         
         models = sorted(df_cars[df_cars['Make'] == make]['Model'].dropna().unique().tolist())
         model = st.selectbox("Model", models)
     else:
-        # Fallbacks if CSV fails to load
-        make = st.text_input("Make", value="Porsche") 
-        model = st.text_input("Model", value="996 911")
+        make = st.text_input("Make", value="Mercedes-Benz") 
+        model = st.text_input("Model", value="W212 E63 AMG")
 
     year = st.number_input("Year", min_value=1900, max_value=2025, value=2015)
     mileage = st.number_input("Mileage", min_value=0, value=50000, step=500)
     state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, value="AZ")
 
-# Filter dataframe for dynamic dropdowns
 if not df_cars.empty:
     spec_df = df_cars[(df_cars['Make'] == make) & (df_cars['Model'] == model)]
 else:
@@ -63,23 +68,19 @@ with col2:
     title_status = st.selectbox("Title Status", ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"])
     seller_type = st.selectbox("Seller Type", ["Private Party", "Dealer", "Other"])
     
-    # Dynamic Drivetrain
     drivetrains = sorted(spec_df['Drivetrain'].dropna().unique().tolist()) if not spec_df.empty and 'Drivetrain' in spec_df.columns else []
     if not drivetrains: drivetrains = ["Rear-wheel drive", "4WD/AWD", "Front-wheel drive"]
     drivetrain = st.selectbox("Drivetrain", drivetrains)
 
 with col3:
-    # Dynamic Body Style
     body_styles = sorted(spec_df['Body Style'].dropna().unique().tolist()) if not spec_df.empty and 'Body Style' in spec_df.columns else []
     if not body_styles: body_styles = ["Convertible", "Coupe", "Hatchback", "SUV/Crossover", "Sedan", "Truck", "Van/Minivan", "Wagon"]
     body_style = st.selectbox("Body Style", body_styles)
     
-    # Dynamic Transmission
     transmissions = sorted(spec_df['Transmission_Type'].dropna().unique().tolist()) if not spec_df.empty and 'Transmission_Type' in spec_df.columns else []
     if not transmissions: transmissions = ["Automatic", "Manual", "Other"]
     transmission = st.selectbox("Transmission", transmissions)
     
-    # Dynamic Cylinders
     engine_cyls = sorted(spec_df['Engine_Cylinders'].dropna().unique().tolist()) if not spec_df.empty and 'Engine_Cylinders' in spec_df.columns else []
     if not engine_cyls: engine_cyls = ["I4", "I6", "V6", "V8", "V10", "V12", "H4", "H6", "Electric", "Rotary", "Other", "Unknown"]
     engine_cyl = st.selectbox("Cylinders", engine_cyls)
@@ -103,7 +104,7 @@ with text_col2:
     included_items = st.text_area("Other Items Included in Sale")
     seller_notes = st.text_area("Seller Notes")
 
-# --- SUBMISSION LOGIC ---
+st.markdown("<br>", unsafe_allow_html=True)
 submitted = st.button("💰 Predict Market Price", use_container_width=True)
 
 if submitted:
@@ -133,26 +134,26 @@ if submitted:
         "Seller Notes": seller_notes
     }
 
-    st.info("Analyzing text and generating prediction...")
-    
-    try:
-        response = requests.post(API_URL, json=payload)
-        
-        if response.status_code == 200:
-            result = response.json()
-            if 'estimated_price' in result:
-                price = result['estimated_price']
-            elif 'body' in result:
-                body_data = json.loads(result['body'])
-                price = body_data.get('estimated_price', 0)
-            else:
-                price = 0
-                st.error(f"Unexpected response format: {result}")
-
-            if price > 0:
-                st.success(f"## Estimated Price: ${price:,.2f}")
-        else:
-            st.error(f"Error {response.status_code}: {response.text}")
+    with st.spinner("Analyzing auction text and generating prediction..."):
+        try:
+            response = requests.post(API_URL, json=payload)
             
-    except Exception as e:
-        st.error(f"Connection failed: {e}")
+            if response.status_code == 200:
+                result = response.json()
+                if 'estimated_price' in result:
+                    price = result['estimated_price']
+                elif 'body' in result:
+                    body_data = json.loads(result['body'])
+                    price = body_data.get('estimated_price', 0)
+                else:
+                    price = 0
+                    st.error(f"Unexpected response format: {result}")
+
+                if price > 0:
+                    st.markdown("---")
+                    st.metric(label="Estimated Auction Value", value=f"${price:,.2f}")
+            else:
+                st.error(f"Error {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            st.error(f"Connection failed: {e}")
