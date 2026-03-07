@@ -12,18 +12,18 @@ st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", pa
 # --- DATA LOADING ---
 @st.cache_data
 def load_car_data():
-    # Adjust this path if your Streamlit app runs from the root directory instead of the frontend directory
-    file_path = "../../data/train_data.csv"
+    # Path if running from inside the 'frontend' folder locally
+    file_path = "../data/dropdown_options.csv"
     
-    # Fallback in case the path is different in Streamlit Cloud
+    # Fallback path if Streamlit Cloud runs from the root folder
     if not os.path.exists(file_path):
-        file_path = "../data/train_data.csv"
+        file_path = "data/dropdown_options.csv"
         
     try:
         return pd.read_csv(file_path)
     except FileNotFoundError:
-        st.error(f"Could not find the training data at {file_path}. Please check your file paths.")
-        return pd.DataFrame() # Return empty df so the app doesn't crash completely
+        st.error(f"Could not find the options data at {file_path}. Please check your file paths.")
+        return pd.DataFrame() 
 
 df_cars = load_car_data()
 
