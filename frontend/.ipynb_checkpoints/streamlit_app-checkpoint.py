@@ -12,9 +12,9 @@ st.set_page_config(page_title="Classic Car Price Predictor", page_icon="🚗", l
 # --- DATA LOADING ---
 @st.cache_data
 def load_car_data():
-    file_path = "../data/dropdown_options.csv"
+    file_path = "../data/frontend_data/dropdown_options.csv"
     if not os.path.exists(file_path):
-        file_path = "data/dropdown_options.csv"
+        file_path = "data/frontend_data/dropdown_options.csv"
         
     try:
         return pd.read_csv(file_path)
@@ -23,6 +23,19 @@ def load_car_data():
         return pd.DataFrame() 
 
 df_cars = load_car_data()
+
+@st.cache_data
+def load_historical_averages():
+    file_path = "../data/frontend_data/historical_averages_lookup.csv"
+    if not os.path.exists(file_path):
+        file_path = "data/frontend_data/historical_averages_lookup.csv"
+        
+    try:
+        return pd.read_csv(file_path)
+    except FileNotFoundError:
+        return pd.DataFrame()
+
+df_history = load_historical_averages()
 
 # --- UI HEADER ---
 st.title("🚗 Classic Car Market Estimator")
@@ -84,7 +97,7 @@ st.divider()
 
 # --- AUCTION TEXT ---
 st.subheader("📝 2. Auction Description")
-st.info("Paste the exact text from the listing. The AI will extract features like mods, flaws, and condition indicators.")
+st.info("Paste the exact text from the listing. The app will extract features like mods, flaws, and condition indicators.")
 
 with st.expander("Click to expand and paste auction text blocks", expanded=True):
     text_col1, text_col2 = st.columns(2)
@@ -133,7 +146,9 @@ if submitted:
 
     with st.spinner("Analyzing data and communicating with AWS Lambda..."):
         try:
+            # --- 1. Get Prediction from Lambda ---
             response = requests.post(API_URL, json=payload)
+            price = 0
             
             if response.status_code == 200:
                 result = response.json()
@@ -143,14 +158,68 @@ if submitted:
                     body_data = json.loads(result['body'])
                     price = body_data.get('estimated_price', 0)
                 else:
-                    price = 0
                     st.error(f"Unexpected response format: {result}")
-
-                if price > 0:
-                    st.success("Analysis Complete!")
-                    st.metric(label="Estimated Auction Value", value=f"${price:,.2f}")
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
                 
+            # --- 2. Calculate Historical Average with Fallbacks ---
+            historical_avg = None
+            match_level = "No historical data found"
+            applied_conditions = [] # <-- NEW: Variable to hold the successful filters
+            
+            if not df_history.empty:
+                target_col = 'Sold_Price' 
+                
+                fallback_filters = [
+                    {"name": "Make, Model, Year, Trans, Color", "conditions": [('Make', make), ('Model', model), ('Year', year), ('Transmission_Type', transmission), ('Exterior Color', exterior_color)]},
+                    {"name": "Make, Model, Year, Trans", "conditions": [('Make', make), ('Model', model), ('Year', year), ('Transmission_Type', transmission)]},
+                    {"name": "Make, Model, Year", "conditions": [('Make', make), ('Model', model), ('Year', year)]},
+                    {"name": "Make & Model", "conditions": [('Make', make), ('Model', model)]},
+                    {"name": "Make Only", "conditions": [('Make', make)]}
+                ]
+                
+                for f in fallback_filters:
+                    temp_df = df_history.copy()
+                    
+                    # Apply filters dynamically
+                    for col_name, val in f["conditions"]:
+                        if col_name in temp_df.columns:
+                            temp_df = temp_df[temp_df[col_name] == val]
+                    
+                    # If we found matches, calculate the average and break the loop
+                    if not temp_df.empty and target_col in temp_df.columns:
+                        historical_avg = temp_df[target_col].mean()
+                        match_level = f["name"]
+                        applied_conditions = f["conditions"] # <-- NEW: Save the exact filter values
+                        break
+
+            # --- 3. Display Results Side-by-Side ---
+            if price > 0:
+                st.success("Analysis Complete!")
+                
+                # Create columns for the metrics
+                metric_col1, metric_col2 = st.columns(2)
+                
+                with metric_col1:
+                    st.metric(label="Estimated Auction Value (AI)", value=f"${price:,.2f}")
+                    
+                with metric_col2:
+                    if historical_avg is not None:
+                        st.metric(
+                            label=f"Historical Average", 
+                            value=f"${historical_avg:,.2f}", 
+                            help=f"Based on historical data matching: {match_level}"
+                        )
+                    else:
+                        st.metric(label="Historical Average", value="N/A", help="No matching historical data found.")
+
+                # --- 4. NEW: Print the exact filters used ---
+                if historical_avg is not None:
+                    # Format the conditions into a readable string like "Make: Porsche | Model: 911"
+                    filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
+                    st.info(f"**Historical average calculated using:** {filter_text}")
+                else:
+                    st.info(f"**Historical average unable to be calculated**")
+
         except Exception as e:
             st.error(f"Connection failed: {e}")

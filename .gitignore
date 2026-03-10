@@ -1,1 +1,6 @@
 data/*.csv
+data/frontend_data/*.csv
+!data/frontend_data/historical_averages_lookup.csv
+!data/frontend_data/dropdown_options.csv
+*.pkl
+.ipynb_checkpoints/
