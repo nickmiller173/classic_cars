@@ -7,7 +7,7 @@ import os
 # --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
 
-st.set_page_config(page_title="Classic Car Price Predictor", page_icon="🚗", layout="wide")
+st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", page_icon="🚗", layout="wide")
 
 # --- DATA LOADING ---
 @st.cache_data
@@ -164,6 +164,7 @@ if submitted:
                 
             # --- 2. Calculate Historical Average with Fallbacks ---
             historical_avg = None
+            historical_count = 0
             match_level = "No historical data found"
             applied_conditions = [] # <-- NEW: Variable to hold the successful filters
             
@@ -189,6 +190,7 @@ if submitted:
                     # If we found matches, calculate the average and break the loop
                     if not temp_df.empty and target_col in temp_df.columns:
                         historical_avg = temp_df[target_col].mean()
+                        historical_count = len(temp_df)
                         match_level = f["name"]
                         applied_conditions = f["conditions"] # <-- NEW: Save the exact filter values
                         break
@@ -198,7 +200,7 @@ if submitted:
                 st.success("Analysis Complete!")
                 
                 # Create columns for the metrics
-                metric_col1, metric_col2 = st.columns(2)
+                metric_col1, metric_col2, metric_col3 = st.columns(3)
                 
                 with metric_col1:
                     st.metric(label="Estimated Auction Value (AI)", value=f"${price:,.2f}")
@@ -212,12 +214,22 @@ if submitted:
                         )
                     else:
                         st.metric(label="Historical Average", value="N/A", help="No matching historical data found.")
+                        
+                with metric_col3:
+                    # NEW: Display the Sample Size metric
+                    if historical_count > 0:
+                        st.metric(
+                            label="Historical Sample Size", 
+                            value=f"{historical_count} cars",
+                            help="The number of past sales used to calculate the historical average."
+                        )
+                    else:
+                        st.metric(label="Historical Sample Size", value="0 cars")
 
                 # --- 4. NEW: Print the exact filters used ---
                 if historical_avg is not None:
-                    # Format the conditions into a readable string like "Make: Porsche | Model: 911"
                     filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
-                    st.info(f"**Historical average calculated using:** {filter_text}")
+                    st.info(f"**Historical average calculated using ({historical_count} matches):** {filter_text}")
                 else:
                     st.info(f"**Historical average unable to be calculated**")
 
