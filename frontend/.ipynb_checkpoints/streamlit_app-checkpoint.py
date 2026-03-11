@@ -38,7 +38,7 @@ def load_historical_averages():
 df_history = load_historical_averages()
 
 # --- UI HEADER ---
-st.title("carsandbids.com 🚗 Classic Car Market Estimator")
+st.title("carsandbids.com 🚗 Classic Car Price Estimator")
 st.markdown("Instantly estimate the auction value of a classic car based on its specs and historical condition reports.")
 st.divider()
 
@@ -53,10 +53,11 @@ with col1:
         make = st.selectbox("Make", makes, index=default_make_idx)
         
         models = sorted(df_cars[df_cars['Make'] == make]['Model'].dropna().unique().tolist())
-        model = st.selectbox("Model", models)
+        default_model_idx = models.index("996 911") if "996 911" in models else 0
+        model = st.selectbox("Model", models, index=default_model_idx)
     else:
-        make = st.text_input("Make", value="Mercedes-Benz") 
-        model = st.text_input("Model", value="W212 E63 AMG")
+        make = st.text_input("Make", value="Porsche") 
+        model = st.text_input("Model", value="996 911")
 
 # Instantiate spec_df early 
 if not df_cars.empty:
@@ -68,9 +69,10 @@ with col1:
     years = sorted(spec_df['Year'].dropna().unique().tolist(), reverse=True) if not spec_df.empty and 'Year' in spec_df.columns else []
     if years:
         years = [int(y) for y in years]
-        year = st.selectbox("Year", years)
+        default_year_idx = years.index(2002) if 2002 in years else 0
+        year = st.selectbox("Year", years, index=default_year_idx)
     else:
-        year = st.number_input("Year", min_value=1900, max_value=2025, value=2015)
+        year = st.number_input("Year", min_value=1925, max_value=2025, value=2002)
 
     # 1. CASCADE: Filter by Year
     if not spec_df.empty and 'Year' in spec_df.columns:
