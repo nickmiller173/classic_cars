@@ -279,12 +279,19 @@ if submitted:
                     # --- 5. NEW: Display the Table of Matching Cars ---
                     st.subheader("Historical Sales Data")
                     
-                    # Optional: Define which columns look best in the UI (adjust based on your actual CSV columns)
-                    display_cols = ['Make', 'Model', 'Year', 'Mileage', 'Sold_Price']
+                    # Add 'URL' to the display columns
+                    display_cols = ['Make', 'Model', 'Year', 'Mileage', 'Sold_Price', 'URL']
                     available_cols = [c for c in display_cols if c in matching_cars_df.columns]
                     
                     if available_cols:
-                        st.dataframe(matching_cars_df[available_cols], use_container_width=True, hide_index=True)
+                        st.dataframe(
+                            matching_cars_df[available_cols], 
+                            use_container_width=True, 
+                            hide_index=True,
+                            column_config={
+                                "URL": st.column_config.LinkColumn("Listing Link", display_text="View Auction")
+                            }
+                        )
                     else:
                         # Fallback if specific columns aren't found
                         st.dataframe(matching_cars_df, use_container_width=True, hide_index=True)
