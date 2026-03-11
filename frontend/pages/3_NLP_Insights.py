@@ -3,12 +3,12 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="NLP Insights", page_icon="📝", layout="wide")
-st.title("📝 The Value of Words: NLP Feature Impact")
-st.markdown("We parsed thousands of auction descriptions. Here is how specific keywords and conditions impact the final sale price.")
+st.title("📝 Text Feature Impact")
+st.markdown("By taking the common text fields and applying Natural Langauge Processing techniques, common themes can be extracted. Here is how specific keywords and conditions impact the final sale price.")
 
 @st.cache_data
 def load_full_data():
-    ffile_path = "../data/frontend_data/dashboard_data.csv"
+    file_path = "../data/frontend_data/dashboard_data.csv"
     if not os.path.exists(file_path):
         file_path = "data/frontend_data/dashboard_data.csv"
     return pd.read_csv(file_path)
