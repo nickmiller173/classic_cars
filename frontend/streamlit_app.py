@@ -38,12 +38,12 @@ def load_historical_averages():
 df_history = load_historical_averages()
 
 # --- UI HEADER ---
-st.title("🚗 Classic Car Market Estimator")
+st.title("carsandbids.com 🚗 Classic Car Market Estimator")
 st.markdown("Instantly estimate the auction value of a classic car based on its specs and historical condition reports.")
 st.divider()
 
 # --- VEHICLE SPECS ---
-st.subheader("📋 1. Vehicle Specifications")
+st.subheader("🛠️ 1. Vehicle Specifications")
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -58,14 +58,23 @@ with col1:
         make = st.text_input("Make", value="Mercedes-Benz") 
         model = st.text_input("Model", value="W212 E63 AMG")
 
-    year = st.number_input("Year", min_value=1900, max_value=2025, value=2015)
-    mileage = st.number_input("Mileage", min_value=0, value=50000, step=500)
-    state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, value="AZ")
-
+# Instantiate spec_df early to use it for the Year dropdown
 if not df_cars.empty:
     spec_df = df_cars[(df_cars['Make'] == make) & (df_cars['Model'] == model)]
 else:
     spec_df = pd.DataFrame()
+
+# Continue col1 for Year and remaining fields
+with col1:
+    years = sorted(spec_df['Year'].dropna().unique().tolist(), reverse=True) if not spec_df.empty and 'Year' in spec_df.columns else []
+    if years:
+        years = [int(y) for y in years]
+        year = st.selectbox("Year", years)
+    else:
+        year = st.number_input("Year", min_value=1900, max_value=2025, value=2015)
+
+    mileage = st.number_input("Mileage", min_value=0, value=50000, step=500)
+    state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, value="AZ")
 
 with col2:
     exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'])
@@ -90,8 +99,18 @@ with col3:
     if not engine_cyls: engine_cyls = ["I4", "I6", "V6", "V8", "V10", "V12", "H4", "H6", "Electric", "Rotary", "Other", "Unknown"]
     engine_cyl = st.selectbox("Cylinders", engine_cyls)
 
-    gears = st.slider("Gears", 1, 10, 6)
-    displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
+    gears_opts = sorted(spec_df['Gears'].dropna().unique().tolist()) if not spec_df.empty and 'Gears' in spec_df.columns else []
+    if gears_opts:
+        gears_opts = [int(g) for g in gears_opts]
+        gears = st.selectbox("Gears", gears_opts)
+    else:
+        gears = st.slider("Gears", 1, 10, 6)
+
+    disp_opts = sorted(spec_df['Engine_Displacement_L'].dropna().unique().tolist()) if not spec_df.empty and 'Engine_Displacement_L' in spec_df.columns else []
+    if disp_opts:
+        displacement = st.selectbox("Engine Displacement (L) [0 for EV]", disp_opts)
+    else:
+        displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
 
 st.divider()
 
