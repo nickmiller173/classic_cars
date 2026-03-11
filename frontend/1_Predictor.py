@@ -255,9 +255,9 @@ if submitted:
                 with metric_col2:
                     if historical_avg is not None:
                         st.metric(
-                            label=f"Historical Average", 
+                            label=f"Historical Average (Calculated using matching vehicles by Make/Model/Year/Transmission Type/Exterior Color)", 
                             value=f"${historical_avg:,.2f}", 
-                            help=f"Based on historical data matching: {match_level}"
+                            help=f"Based on historical data matching: {match_level}. NOTE: If the dataset doesn't have a car that matches the exact combination of inputs, the app relies on a cascading list of fallback filters."
                         )
                     else:
                         st.metric(label="Historical Average", value="N/A", help="No matching historical data found.")
