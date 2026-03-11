@@ -209,7 +209,8 @@ if submitted:
             historical_avg = None
             historical_count = 0
             match_level = "No historical data found"
-            applied_conditions = [] # <-- NEW: Variable to hold the successful filters
+            applied_conditions = [] # <-- Variable to hold the successful filters
+            matching_cars_df = pd.DataFrame()
             
             if not df_history.empty:
                 target_col = 'Sold_Price' 
@@ -235,7 +236,8 @@ if submitted:
                         historical_avg = temp_df[target_col].mean()
                         historical_count = len(temp_df)
                         match_level = f["name"]
-                        applied_conditions = f["conditions"] # <-- NEW: Save the exact filter values
+                        applied_conditions = f["conditions"]
+                        matching_cars_df = temp_df # <-- Save the dataframe of matches
                         break
 
             # --- 3. Display Results Side-by-Side ---
@@ -273,6 +275,20 @@ if submitted:
                 if historical_avg is not None:
                     filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
                     st.info(f"**Historical average calculated using ({historical_count} matches):** {filter_text}")
+                    
+                    # --- 5. NEW: Display the Table of Matching Cars ---
+                    st.subheader("Historical Sales Data")
+                    
+                    # Optional: Define which columns look best in the UI (adjust based on your actual CSV columns)
+                    display_cols = ['Make', 'Model', 'Year', 'Mileage', 'Sold_Price']
+                    available_cols = [c for c in display_cols if c in matching_cars_df.columns]
+                    
+                    if available_cols:
+                        st.dataframe(matching_cars_df[available_cols], use_container_width=True, hide_index=True)
+                    else:
+                        # Fallback if specific columns aren't found
+                        st.dataframe(matching_cars_df, use_container_width=True, hide_index=True)
+
                 else:
                     st.info(f"**Historical average unable to be calculated**")
 
