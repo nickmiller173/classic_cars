@@ -58,13 +58,12 @@ with col1:
         make = st.text_input("Make", value="Mercedes-Benz") 
         model = st.text_input("Model", value="W212 E63 AMG")
 
-# Instantiate spec_df early to use it for the Year dropdown
+# Instantiate spec_df early 
 if not df_cars.empty:
     spec_df = df_cars[(df_cars['Make'] == make) & (df_cars['Model'] == model)]
 else:
     spec_df = pd.DataFrame()
 
-# Continue col1 for Year and remaining fields
 with col1:
     years = sorted(spec_df['Year'].dropna().unique().tolist(), reverse=True) if not spec_df.empty and 'Year' in spec_df.columns else []
     if years:
@@ -73,31 +72,63 @@ with col1:
     else:
         year = st.number_input("Year", min_value=1900, max_value=2025, value=2015)
 
+    # 1. CASCADE: Filter by Year
+    if not spec_df.empty and 'Year' in spec_df.columns:
+        spec_df = spec_df[spec_df['Year'] == year]
+
     mileage = st.number_input("Mileage", min_value=0, value=50000, step=500)
     state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, value="AZ")
 
 with col2:
+    # Static UI Elements (Not filtered by specs)
     exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'])
     interior_color = st.selectbox("Interior Color", ['Black', 'Beige', 'Gray', 'Brown', 'Red', 'White', 'Blue', 'Other'])
     title_status = st.selectbox("Title Status", ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"])
     seller_type = st.selectbox("Seller Type", ["Private Party", "Dealer", "Other"])
     
+    # Dynamic Elements
     drivetrains = sorted(spec_df['Drivetrain'].dropna().unique().tolist()) if not spec_df.empty and 'Drivetrain' in spec_df.columns else []
     if not drivetrains: drivetrains = ["Rear-wheel drive", "4WD/AWD", "Front-wheel drive"]
     drivetrain = st.selectbox("Drivetrain", drivetrains)
+
+    # 2. CASCADE: Filter by Drivetrain
+    if not spec_df.empty and 'Drivetrain' in spec_df.columns:
+        spec_df = spec_df[spec_df['Drivetrain'] == drivetrain]
 
 with col3:
     body_styles = sorted(spec_df['Body Style'].dropna().unique().tolist()) if not spec_df.empty and 'Body Style' in spec_df.columns else []
     if not body_styles: body_styles = ["Convertible", "Coupe", "Hatchback", "SUV/Crossover", "Sedan", "Truck", "Van/Minivan", "Wagon"]
     body_style = st.selectbox("Body Style", body_styles)
     
+    # 3. CASCADE: Filter by Body Style
+    if not spec_df.empty and 'Body Style' in spec_df.columns:
+        spec_df = spec_df[spec_df['Body Style'] == body_style]
+    
     transmissions = sorted(spec_df['Transmission_Type'].dropna().unique().tolist()) if not spec_df.empty and 'Transmission_Type' in spec_df.columns else []
     if not transmissions: transmissions = ["Automatic", "Manual", "Other"]
     transmission = st.selectbox("Transmission", transmissions)
+
+    # 4. CASCADE: Filter by Transmission
+    if not spec_df.empty and 'Transmission_Type' in spec_df.columns:
+        spec_df = spec_df[spec_df['Transmission_Type'] == transmission]
     
     engine_cyls = sorted(spec_df['Engine_Cylinders'].dropna().unique().tolist()) if not spec_df.empty and 'Engine_Cylinders' in spec_df.columns else []
     if not engine_cyls: engine_cyls = ["I4", "I6", "V6", "V8", "V10", "V12", "H4", "H6", "Electric", "Rotary", "Other", "Unknown"]
     engine_cyl = st.selectbox("Cylinders", engine_cyls)
+
+    # 5. CASCADE: Filter by Cylinders
+    if not spec_df.empty and 'Engine_Cylinders' in spec_df.columns:
+        spec_df = spec_df[spec_df['Engine_Cylinders'] == engine_cyl]
+
+    # Note: Swapped Displacement and Gears so displacement limits the gears available
+    disp_opts = sorted(spec_df['Engine_Displacement_L'].dropna().unique().tolist()) if not spec_df.empty and 'Engine_Displacement_L' in spec_df.columns else []
+    if disp_opts:
+        displacement = st.selectbox("Engine Displacement (L) [0 for EV]", disp_opts)
+        # 6. CASCADE: Filter by Displacement
+        if not spec_df.empty:
+            spec_df = spec_df[spec_df['Engine_Displacement_L'] == displacement]
+    else:
+        displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
 
     gears_opts = sorted(spec_df['Gears'].dropna().unique().tolist()) if not spec_df.empty and 'Gears' in spec_df.columns else []
     if gears_opts:
@@ -105,13 +136,6 @@ with col3:
         gears = st.selectbox("Gears", gears_opts)
     else:
         gears = st.slider("Gears", 1, 10, 6)
-
-    disp_opts = sorted(spec_df['Engine_Displacement_L'].dropna().unique().tolist()) if not spec_df.empty and 'Engine_Displacement_L' in spec_df.columns else []
-    if disp_opts:
-        displacement = st.selectbox("Engine Displacement (L) [0 for EV]", disp_opts)
-    else:
-        displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=3.0, step=0.1)
-
 st.divider()
 
 # --- AUCTION TEXT ---
