@@ -282,7 +282,7 @@ if submitted:
                     st.subheader("Historical Sales Data")
                     
                     # Add 'URL' to the display columns
-                    display_cols = ['Make', 'Model', 'Year', 'Mileage', 'Exterior Color', 'Transmission_Type', 'Sold_Price', 'URL']
+                    display_cols = ['URL', 'Make', 'Model', 'Year', 'Mileage', 'Exterior Color', 'Transmission_Type','Drivetrain', 'Body Style', 'Sold_Price']
                     available_cols = [c for c in display_cols if c in matching_cars_df.columns]
                     
                     if available_cols:
