@@ -35,12 +35,19 @@ tab1, tab2, tab3, tab4 = st.tabs([
 with tab1:
     st.subheader("General Keyword & Condition Flags")
     if not df_dashboard.empty:
+        # Expanded dictionary to include all engineered text features from functions.py
         nlp_features = {
             '2_keys_ind': 'Included 2 Keys',
+            'owners_manual_ind': "Included Owner's Manual",
             'is_dry_climate_car': 'Dry Climate / Rust Free',
-            'has_sport_seats': 'Sport Seats (Recaro, etc.)',
-            'recent_major_service': 'Recent Major Service (Timing Belt, etc.)',
-            'is_project_car': 'Project Car / Not Running'
+            'is_project_car': 'Project Car / Not Running',
+            'has_new_tires': 'New Tires / Fresh Rubber',
+            'has_sport_seats': 'Sport Seats (Recaro, Bucket, etc.)',
+            'emissions_ind': 'Emissions Mentioned',
+            'loan_ind': 'Active Loan / Lien',
+            'one_owner_ind': 'Single Owner History',
+            'carfax_ind': 'Carfax Damage Mentioned',
+            'recent_major_service': 'Recent Major Service (Timing Belt, etc.)'
         }
         
         results = []
@@ -49,21 +56,50 @@ with tab1:
                 has_feature = df_dashboard[df_dashboard[col] == 1]['Sold_Price'].mean()
                 does_not_have = df_dashboard[df_dashboard[col] == 0]['Sold_Price'].mean()
                 
-                # Calculate the percentage bump
-                percentage_premium = ((has_feature - does_not_have) / does_not_have) * 100
-                
-                results.append({
-                    "Feature": readable_name,
-                    "Avg Price (With)": has_feature,
-                    "Avg Price (Without)": does_not_have,
-                    "Premium (%)": percentage_premium
-                })
+                # Ensure we have valid data before doing math to prevent division by zero
+                if pd.notna(has_feature) and pd.notna(does_not_have) and does_not_have > 0:
+                    percentage_premium = ((has_feature - does_not_have) / does_not_have) * 100
+                    
+                    results.append({
+                        "Feature": readable_name,
+                        "Avg Price (With)": has_feature,
+                        "Avg Price (Without)": does_not_have,
+                        "Premium (%)": percentage_premium
+                    })
                 
         impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
         
         st.write("### Resale Value Impact")
-        st.caption("Shows the percentage increase in average sale price when this feature is mentioned in the listing.")
-        st.bar_chart(impact_df.set_index('Feature')['Premium (%)'])
+        st.caption("Shows the percentage increase or decrease in average sale price when this feature is mentioned in the listing.")
+        
+        import altair as alt
+        
+        # Upgraded to Altair to match the other tabs: handles angled labels and conditional colors
+        bars = alt.Chart(impact_df).mark_bar().encode(
+            x=alt.X('Feature:N', sort='-y', title="", axis=alt.Axis(labelAngle=-45, labelLimit=300)),
+            y=alt.Y('Premium (%):Q', title="Price Premium vs Baseline (%)"),
+            # Dynamically color the bars: Teal for positive value, Red for penalty
+            color=alt.condition(
+                alt.datum['Premium (%)'] > 0,
+                alt.value('#00bfa5'),  # Teal
+                alt.value('#ff5252')   # Red
+            ),
+            tooltip=['Feature', alt.Tooltip('Premium (%):Q', format='.1f', title='Impact (%)')]
+        )
+        
+        st.altair_chart(bars, use_container_width=True)
+        
+        # Optional: Keep the dataframe below for exact numerical reference
+        with st.expander("View Raw Impact Data"):
+            st.dataframe(
+                impact_df, 
+                use_container_width=True,
+                column_config={
+                    "Avg Price (With)": st.column_config.NumberColumn(format="$%.0f"),
+                    "Avg Price (Without)": st.column_config.NumberColumn(format="$%.0f"),
+                    "Premium (%)": st.column_config.NumberColumn(format="%.1f%%")
+                }
+            )
 
 # --- TAB 2: AFTERMARKET BRANDS ---
 with tab2:
