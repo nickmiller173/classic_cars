@@ -135,10 +135,11 @@ with tab3:
             Market_Share=('Sold_Price', 'count')
         ).reset_index()
         
+        import altair as alt
         col1, col2 = st.columns([1, 1])
+        
         with col1:
             st.write("#### Market Share Distribution")
-            # Create a donut chart with Altair
             pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
                 color=alt.Color(field="Archetype", type="nominal", legend=alt.Legend(title="Archetypes", orient="bottom")),
@@ -148,31 +149,63 @@ with tab3:
             
         with col2:
             st.write("#### Average Sold Price")
-            st.bar_chart(arch_summary.set_index("Archetype")["Average_Price"])
+            # Upgraded to Altair to sync colors with the pie chart and fix label clipping
+            bar = alt.Chart(arch_summary).mark_bar().encode(
+                x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300)),
+                y=alt.Y("Average_Price:Q", title="Average Price ($)"),
+                color=alt.Color("Archetype:N", legend=None), # Syncs color to the pie chart
+                tooltip=['Archetype', 'Average_Price']
+            )
+            st.altair_chart(bar, use_container_width=True)
 
 # --- TAB 4: COMPREHENSIVENESS ---
 with tab4:
     st.subheader("Does Effort Equal Dollars?")
-    st.markdown("We calculated the **Sentence Count** of the description fields to gauge listing comprehensiveness. Do highly detailed listings inherently attract higher bids?")
+    st.markdown("To cut through the noise, we split the listings down the middle into **Brief** (bottom 50% of length) vs. **Extensive** (top 50% of length).")
     
     if not df_effort.empty:
-        # Filter out extreme outliers using sentence count
+        # Filter out extreme outliers
+        df_effort = df_effort[(df_effort['Total_Word_Count'] > 50) & (df_effort['Total_Word_Count'] < 1000)]
         df_effort = df_effort[(df_effort['Sentence_Count'] > 2) & (df_effort['Sentence_Count'] < 100)]
         
         bins = [0, 30000, 80000, float('inf')]
-        price_labels = ['Under $30k (Entry)', '$30k - $80k (Premium)', 'Over $80k (High-End)']
+        price_labels = ['1. Under $30k', '2. $30k - $80k', '3. Over $80k']
         df_effort['Market_Segment'] = pd.cut(df_effort['Sold_Price'], bins=bins, labels=price_labels)
         
-        # Bucket by sentences
-        detail_labels = ["1: Brief", "2: Standard Detail", "3: Highly Detailed"]
-        df_effort['Detail_Level'] = pd.qcut(df_effort['Sentence_Count'], q=3, labels=detail_labels)
+        # Binary Splits
+        df_effort['Word_Tier'] = pd.qcut(df_effort['Total_Word_Count'], q=2, labels=["Brief", "Extensive"])
+        df_effort['Sentence_Tier'] = pd.qcut(df_effort['Sentence_Count'], q=2, labels=["Brief", "Extensive"])
         
-        pivot = df_effort.pivot_table(index='Market_Segment', columns='Detail_Level', values='Sold_Price', aggfunc='mean')
+        col1, col2 = st.columns(2)
         
-        st.write("### Average Sale Price by Market Segment")
-        st.caption("By segmenting the market, we can see if a detailed description adds more value to a cheap project car or an expensive supercar.")
-        st.bar_chart(pivot)
+        with col1:
+            st.write("#### Impact of Word Count")
+            pivot_words = df_effort.pivot_table(index='Market_Segment', columns='Word_Tier', values='Sold_Price', aggfunc='mean')
+            st.bar_chart(pivot_words)
+            
+        with col2:
+            st.write("#### Impact of Sentence Count")
+            pivot_sentences = df_effort.pivot_table(index='Market_Segment', columns='Sentence_Tier', values='Sold_Price', aggfunc='mean')
+            st.bar_chart(pivot_sentences)
         
         st.divider()
-        st.write("### The Raw Data (Sentence Count vs. Price)")
-        st.scatter_chart(df_effort, x="Sentence_Count", y="Sold_Price", color="Market_Segment")
+        
+        # NEW INSIGHT: Using Trendlines to cut through scatter noise
+        st.write("### Cutting Through the Noise: Trendline Analysis")
+        st.caption("Because there is a massive variance in word counts at all price points, a linear regression trendline calculates the mathematical slope to reveal if there is a true premium for writing more.")
+        
+        import altair as alt
+        
+        # Base scatter plot (faded out)
+        scatter = alt.Chart(df_effort).mark_circle(opacity=0.3, size=40).encode(
+            x=alt.X('Total_Word_Count:Q', title="Total Word Count"),
+            y=alt.Y('Sold_Price:Q', title="Sold Price ($)"),
+            color=alt.Color('Market_Segment:N', legend=alt.Legend(title="Segment", orient="top"))
+        )
+        
+        # Add regression lines on top of the scatter
+        trendline = scatter.transform_regression(
+            'Total_Word_Count', 'Sold_Price', groupby=['Market_Segment']
+        ).mark_line(size=4)
+        
+        st.altair_chart(scatter + trendline, use_container_width=True)
