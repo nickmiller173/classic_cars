@@ -1,3 +1,4 @@
+import altair as alt
 import streamlit as st
 import pandas as pd
 import os
@@ -74,14 +75,16 @@ with tab2:
         has_mods_price = df_brands[df_brands['Has_Premium_Mods'] == 1]['Sold_Price'].mean()
         no_mods_price = df_brands[df_brands['Has_Premium_Mods'] == 0]['Sold_Price'].mean()
         
-        # High-level KPIs
+        # Calculate percentage increase
+        pct_increase = ((has_mods_price - no_mods_price) / no_mods_price) * 100
+        
         col1, col2 = st.columns(2)
         col1.metric("Avg Price (Stock / No Premium Brands)", f"${no_mods_price:,.0f}")
-        col2.metric("Avg Price (With Premium Brands)", f"${has_mods_price:,.0f}", f"${has_mods_price - no_mods_price:,.0f}")
+        col2.metric("Avg Price (With Premium Brands)", f"${has_mods_price:,.0f}", f"+{pct_increase:.1f}%")
         
         st.divider()
-        st.write("### Brand Exclusivity vs. Average Sale Price")
-        st.caption("Brands higher on the Y-Axis are associated with high-dollar builds. Brands further to the right on the X-Axis are more common across all listings.")
+        st.write("### Brand Exclusivity vs. Value Premium")
+        st.caption("Brands higher on the Y-Axis command a larger percentage premium over the baseline. Brands further to the right are more common.")
         
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
         df_exploded = df_exploded[df_exploded['Extracted_Brands_List'] != '']
@@ -94,17 +97,24 @@ with tab2:
         ).reset_index()
         
         brand_impact = brand_impact[brand_impact['Total_Mentions'] > 2]
+        # Calculate the premium as a percentage for the Y-Axis
+        brand_impact['Premium_Pct'] = ((brand_impact['Average_Sale_Price'] - baseline_price) / baseline_price) * 100
         
-        # A scatter chart clearly plots rarity vs value
-        st.scatter_chart(
-            brand_impact, 
-            x="Total_Mentions", 
-            y="Average_Sale_Price",
-            size="Total_Mentions" 
+        import altair as alt
+        
+        # Build a labeled scatter plot
+        scatter = alt.Chart(brand_impact).mark_circle(size=100).encode(
+            x=alt.X('Total_Mentions:Q', title='Total Listing Mentions'),
+            y=alt.Y('Premium_Pct:Q', title='Price Premium vs Baseline (%)'),
+            color=alt.Color('Brand:N', legend=None),
+            tooltip=['Brand', 'Total_Mentions', 'Premium_Pct']
         )
         
-        # Show the raw data table for exact numbers
-        st.dataframe(brand_impact.sort_values(by="Average_Sale_Price", ascending=False), use_container_width=True)
+        text = scatter.mark_text(
+            align='left', baseline='middle', dx=10
+        ).encode(text='Brand:N')
+        
+        st.altair_chart(scatter + text, use_container_width=True)
 
 # --- TAB 3: LISTING ARCHETYPES ---
 with tab3:
@@ -112,7 +122,6 @@ with tab3:
     st.markdown("Using Non-Negative Matrix Factorization (NMF), we blinded an algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their build sheet, modifications, and condition.")
     
     if not df_archetypes.empty:
-        # Map the clusters your Jupyter Notebook discovered
         cluster_mapping = {
             0: "The Loaded Luxury Cruiser",
             1: "The Rad-Era Driver (90s/00s)",
@@ -126,10 +135,17 @@ with tab3:
             Market_Share=('Sold_Price', 'count')
         ).reset_index()
         
-        col1, col2 = st.columns(2)
+        col1, col2 = st.columns([1, 1])
         with col1:
-            st.write("#### Volume by Archetype")
-            st.bar_chart(arch_summary.set_index("Archetype")["Market_Share"])
+            st.write("#### Market Share Distribution")
+            # Create a donut chart with Altair
+            pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
+                theta=alt.Theta(field="Market_Share", type="quantitative"),
+                color=alt.Color(field="Archetype", type="nominal", legend=alt.Legend(title="Archetypes", orient="bottom")),
+                tooltip=['Archetype', 'Market_Share', 'Average_Price']
+            )
+            st.altair_chart(pie, use_container_width=True)
+            
         with col2:
             st.write("#### Average Sold Price")
             st.bar_chart(arch_summary.set_index("Archetype")["Average_Price"])
@@ -137,21 +153,20 @@ with tab3:
 # --- TAB 4: COMPREHENSIVENESS ---
 with tab4:
     st.subheader("Does Effort Equal Dollars?")
-    st.markdown("We calculated the total word count of the description fields to gauge listing comprehensiveness. Do highly detailed listings inherently attract higher bids?")
+    st.markdown("We calculated the **Sentence Count** of the description fields to gauge listing comprehensiveness. Do highly detailed listings inherently attract higher bids?")
     
     if not df_effort.empty:
-        df_effort = df_effort[(df_effort['Total_Word_Count'] > 50) & (df_effort['Total_Word_Count'] < 1000)]
+        # Filter out extreme outliers using sentence count
+        df_effort = df_effort[(df_effort['Sentence_Count'] > 2) & (df_effort['Sentence_Count'] < 100)]
         
-        # 1. Create Price Tiers to compare apples-to-apples
         bins = [0, 30000, 80000, float('inf')]
         price_labels = ['Under $30k (Entry)', '$30k - $80k (Premium)', 'Over $80k (High-End)']
         df_effort['Market_Segment'] = pd.cut(df_effort['Sold_Price'], bins=bins, labels=price_labels)
         
-        # 2. Create Detail Tiers
-        detail_labels = ["1: Short & Sweet", "2: Standard Detail", "3: Highly Detailed"]
-        df_effort['Detail_Level'] = pd.qcut(df_effort['Total_Word_Count'], q=3, labels=detail_labels)
+        # Bucket by sentences
+        detail_labels = ["1: Brief", "2: Standard Detail", "3: Highly Detailed"]
+        df_effort['Detail_Level'] = pd.qcut(df_effort['Sentence_Count'], q=3, labels=detail_labels)
         
-        # 3. Pivot the data to create a grouped bar chart
         pivot = df_effort.pivot_table(index='Market_Segment', columns='Detail_Level', values='Sold_Price', aggfunc='mean')
         
         st.write("### Average Sale Price by Market Segment")
@@ -159,5 +174,5 @@ with tab4:
         st.bar_chart(pivot)
         
         st.divider()
-        st.write("### The Raw Data (Word Count vs. Price)")
-        st.scatter_chart(df_effort, x="Total_Word_Count", y="Sold_Price", color="Market_Segment")
+        st.write("### The Raw Data (Sentence Count vs. Price)")
+        st.scatter_chart(df_effort, x="Sentence_Count", y="Sold_Price", color="Market_Segment")
