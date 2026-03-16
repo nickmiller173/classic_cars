@@ -68,7 +68,7 @@ with tab1:
 # --- TAB 2: AFTERMARKET BRANDS ---
 with tab2:
     st.subheader("The ROI of Premium Aftermarket Brands")
-    st.markdown("Do buyers actually pay a premium for high-end aftermarket parts? Let's look at the financial impact of specific brands extracted from the raw **Modifications** and **Equipment** text.")
+    st.markdown("The following charts attempt to answer the question: Do buyers actually pay a premium for aftermarket parts? Here I try to show the financial impact of specific brands extracted from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text.")
     
     if not df_brands.empty:
         baseline_price = df_brands['Sold_Price'].mean()
@@ -119,7 +119,7 @@ with tab2:
 # --- TAB 3: LISTING ARCHETYPES ---
 with tab3:
     st.subheader("The Four Hidden Car Archetypes")
-    st.markdown("Using Non-Negative Matrix Factorization (NMF), we blinded an algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their build sheet, modifications, and condition.")
+    st.markdown("The charts below show an attempt at clustering cars into categories using only rich text fields. Using Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes")
     
     if not df_archetypes.empty:
         cluster_mapping = {
@@ -161,8 +161,8 @@ with tab3:
 # --- TAB 4: COMPREHENSIVENESS ---
 # --- TAB 4: SECTION-SPECIFIC DETAIL ---
 with tab4:
-    st.subheader("The Double-Edged Sword of Detail")
-    st.markdown("Does writing a longer description always help? It depends on *what* you are describing. Use the dropdowns below to compare how word count in different sections impacts the final sale price.")
+    st.subheader("Head-to-Head comparison of listing text length")
+    st.markdown("The following charts attempt to answer the question: Does writing a longer description always help? You can use the dropdowns below to compare how word count in different sections impacts the final sale price.")
     
     # Map the clean CSV columns back to readable dropdown options
     wc_columns = {
@@ -200,7 +200,6 @@ with tab4:
             
             return scatter + trendline
 
-        st.write("### Head-to-Head Section Comparison")
         st.caption("These charts are dynamically zoomed to the 95th percentile, hiding extreme outliers so you can clearly see the core market trends.")
         col1, col2 = st.columns(2)
         
