@@ -159,53 +159,57 @@ with tab3:
             st.altair_chart(bar, use_container_width=True)
 
 # --- TAB 4: COMPREHENSIVENESS ---
+# --- TAB 4: SECTION-SPECIFIC DETAIL ---
 with tab4:
-    st.subheader("Does Effort Equal Dollars?")
-    st.markdown("To cut through the noise, we split the listings down the middle into **Brief** (bottom 50% of length) vs. **Extensive** (top 50% of length).")
+    st.subheader("The Double-Edged Sword of Detail")
+    st.markdown("Does writing a longer description always help? It depends on *what* you are describing. Use the dropdowns below to compare how word count in different sections impacts the final sale price.")
     
-    if not df_effort.empty:
-        # Filter out extreme outliers
-        df_effort = df_effort[(df_effort['Total_Word_Count'] > 50) & (df_effort['Total_Word_Count'] < 1000)]
-        df_effort = df_effort[(df_effort['Sentence_Count'] > 2) & (df_effort['Sentence_Count'] < 100)]
+    # Map the clean CSV columns back to readable dropdown options
+    wc_columns = {
+        'Highlights_WC': 'Highlights',
+        'Known_Flaws_WC': 'Known Flaws',
+        'Modifications_WC': 'Modifications',
+        'Equipment_WC': 'Equipment',
+        'Recent_Service_WC': 'Recent Service History',
+        'Ownership_WC': 'Ownership History',
+        'Other_Items_WC': 'Other Items Included in Sale',
+        'Seller_Notes_WC': 'Seller Notes'
+    }
+    
+    if not df_effort.empty and 'Highlights_WC' in df_effort.columns:
+        # Filter out extreme anomalies (e.g., someone writing a 1,000 word essay in one section)
+        for col in wc_columns.keys():
+            if col in df_effort.columns:
+                df_effort = df_effort[df_effort[col] < 600]
         
         bins = [0, 30000, 80000, float('inf')]
         price_labels = ['1. Under $30k', '2. $30k - $80k', '3. Over $80k']
         df_effort['Market_Segment'] = pd.cut(df_effort['Sold_Price'], bins=bins, labels=price_labels)
         
-        # Binary Splits
-        df_effort['Word_Tier'] = pd.qcut(df_effort['Total_Word_Count'], q=2, labels=["Brief", "Extensive"])
-        df_effort['Sentence_Tier'] = pd.qcut(df_effort['Sentence_Count'], q=2, labels=["Brief", "Extensive"])
+        import altair as alt
         
+        def build_scatter_trend(x_col, x_title, color_scheme):
+            scatter = alt.Chart(df_effort).mark_circle(opacity=0.4, size=50).encode(
+                x=alt.X(f'{x_col}:Q', title=f"{x_title} Word Count"),
+                y=alt.Y('Sold_Price:Q', title="Sold Price ($)"),
+                color=alt.Color('Market_Segment:N', scale=alt.Scale(scheme=color_scheme), legend=alt.Legend(title="Segment", orient="bottom"))
+            )
+            
+            trendline = scatter.transform_regression(
+                x_col, 'Sold_Price', groupby=['Market_Segment']
+            ).mark_line(size=4)
+            
+            return scatter + trendline
+
+        st.write("### Head-to-Head Section Comparison")
         col1, col2 = st.columns(2)
         
         with col1:
-            st.write("#### Impact of Word Count")
-            pivot_words = df_effort.pivot_table(index='Market_Segment', columns='Word_Tier', values='Sold_Price', aggfunc='mean')
-            st.bar_chart(pivot_words)
+            # Default to Highlights
+            section_1 = st.selectbox("Select First Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=0)
+            st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], 'teals'), use_container_width=True)
             
         with col2:
-            st.write("#### Impact of Sentence Count")
-            pivot_sentences = df_effort.pivot_table(index='Market_Segment', columns='Sentence_Tier', values='Sold_Price', aggfunc='mean')
-            st.bar_chart(pivot_sentences)
-        
-        st.divider()
-        
-        # NEW INSIGHT: Using Trendlines to cut through scatter noise
-        st.write("### Cutting Through the Noise: Trendline Analysis")
-        st.caption("Because there is a massive variance in word counts at all price points, a linear regression trendline calculates the mathematical slope to reveal if there is a true premium for writing more.")
-        
-        import altair as alt
-        
-        # Base scatter plot (faded out)
-        scatter = alt.Chart(df_effort).mark_circle(opacity=0.3, size=40).encode(
-            x=alt.X('Total_Word_Count:Q', title="Total Word Count"),
-            y=alt.Y('Sold_Price:Q', title="Sold Price ($)"),
-            color=alt.Color('Market_Segment:N', legend=alt.Legend(title="Segment", orient="top"))
-        )
-        
-        # Add regression lines on top of the scatter
-        trendline = scatter.transform_regression(
-            'Total_Word_Count', 'Sold_Price', groupby=['Market_Segment']
-        ).mark_line(size=4)
-        
-        st.altair_chart(scatter + trendline, use_container_width=True)
+            # Default to Known Flaws
+            section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
+            st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], 'reds'), use_container_width=True)
