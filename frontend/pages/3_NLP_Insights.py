@@ -182,34 +182,35 @@ with tab4:
             if col in df_effort.columns:
                 df_effort = df_effort[df_effort[col] < 600]
         
-        bins = [0, 30000, 80000, float('inf')]
-        price_labels = ['1. Under $30k', '2. $30k - $80k', '3. Over $80k']
-        df_effort['Market_Segment'] = pd.cut(df_effort['Sold_Price'], bins=bins, labels=price_labels)
-        
         import altair as alt
         
-        def build_scatter_trend(x_col, x_title, color_scheme):
-            scatter = alt.Chart(df_effort).mark_circle(opacity=0.4, size=50).encode(
+        # Updated to remove segments and plot a single, clear trendline
+        def build_scatter_trend(x_col, x_title, line_color):
+            # The scatter dots are all one subtle color now so they don't distract
+            scatter = alt.Chart(df_effort).mark_circle(opacity=0.3, size=50, color="#808495").encode(
                 x=alt.X(f'{x_col}:Q', title=f"{x_title} Word Count"),
-                y=alt.Y('Sold_Price:Q', title="Sold Price ($)"),
-                color=alt.Color('Market_Segment:N', scale=alt.Scale(scheme=color_scheme), legend=alt.Legend(title="Segment", orient="bottom"))
+                y=alt.Y('Sold_Price:Q', title="Sold Price ($)")
             )
             
+            # A single bold trendline slices through the noise
             trendline = scatter.transform_regression(
-                x_col, 'Sold_Price', groupby=['Market_Segment']
-            ).mark_line(size=4)
+                x_col, 'Sold_Price'
+            ).mark_line(size=5, color=line_color)
             
             return scatter + trendline
 
         st.write("### Head-to-Head Section Comparison")
+        st.caption("While sale prices naturally vary wildly between different car models, the colored trendlines cut through the noise to show the general correlation between text length and final bids.")
         col1, col2 = st.columns(2)
         
         with col1:
             # Default to Highlights
             section_1 = st.selectbox("Select First Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=0)
-            st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], 'teals'), use_container_width=True)
+            # Teal trendline
+            st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], '#00bfa5'), use_container_width=True)
             
         with col2:
             # Default to Known Flaws
             section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
-            st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], 'reds'), use_container_width=True)
+            # Red/Orange trendline
+            st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#ff5252'), use_container_width=True)
