@@ -47,18 +47,22 @@ with tab1:
             if col in df_dashboard.columns:
                 has_feature = df_dashboard[df_dashboard[col] == 1]['Sold_Price'].mean()
                 does_not_have = df_dashboard[df_dashboard[col] == 0]['Sold_Price'].mean()
-                difference = has_feature - does_not_have
+                
+                # Calculate the percentage bump
+                percentage_premium = ((has_feature - does_not_have) / does_not_have) * 100
                 
                 results.append({
                     "Feature": readable_name,
                     "Avg Price (With)": has_feature,
                     "Avg Price (Without)": does_not_have,
-                    "Value Premium": difference
+                    "Premium (%)": percentage_premium
                 })
                 
-        impact_df = pd.DataFrame(results).sort_values(by="Value Premium", ascending=False)
-        st.bar_chart(impact_df.set_index('Feature')['Value Premium'])
-        st.dataframe(impact_df, use_container_width=True)
+        impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
+        
+        st.write("### Resale Value Impact")
+        st.caption("Shows the percentage increase in average sale price when this feature is mentioned in the listing.")
+        st.bar_chart(impact_df.set_index('Feature')['Premium (%)'])
 
 # --- TAB 2: AFTERMARKET BRANDS ---
 with tab2:
@@ -76,25 +80,31 @@ with tab2:
         col2.metric("Avg Price (With Premium Brands)", f"${has_mods_price:,.0f}", f"${has_mods_price - no_mods_price:,.0f}")
         
         st.divider()
-        st.write("### Value Added by Specific Brand")
-        st.caption("Shows the average price premium of a listing containing this brand versus the baseline average car price.")
+        st.write("### Brand Exclusivity vs. Average Sale Price")
+        st.caption("Brands higher on the Y-Axis are associated with high-dollar builds. Brands further to the right on the X-Axis are more common across all listings.")
         
-        # Explode the comma-separated string into a format we can group
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
         df_exploded = df_exploded[df_exploded['Extracted_Brands_List'] != '']
         df_exploded['Brand'] = df_exploded['Extracted_Brands_List'].str.split(', ')
         df_exploded = df_exploded.explode('Brand')
         
         brand_impact = df_exploded.groupby('Brand').agg(
-            Average_Price=('Sold_Price', 'mean'),
-            Mentions=('Sold_Price', 'count')
+            Average_Sale_Price=('Sold_Price', 'mean'),
+            Total_Mentions=('Sold_Price', 'count')
         ).reset_index()
         
-        # Filter for statistically relevant brands (e.g., more than 2 mentions)
-        brand_impact['Premium vs Baseline'] = brand_impact['Average_Price'] - baseline_price
-        brand_impact = brand_impact[brand_impact['Mentions'] > 2].sort_values(by="Premium vs Baseline", ascending=False)
+        brand_impact = brand_impact[brand_impact['Total_Mentions'] > 2]
         
-        st.bar_chart(brand_impact.set_index("Brand")["Premium vs Baseline"])
+        # A scatter chart clearly plots rarity vs value
+        st.scatter_chart(
+            brand_impact, 
+            x="Total_Mentions", 
+            y="Average_Sale_Price",
+            size="Total_Mentions" 
+        )
+        
+        # Show the raw data table for exact numbers
+        st.dataframe(brand_impact.sort_values(by="Average_Sale_Price", ascending=False), use_container_width=True)
 
 # --- TAB 3: LISTING ARCHETYPES ---
 with tab3:
@@ -130,18 +140,24 @@ with tab4:
     st.markdown("We calculated the total word count of the description fields to gauge listing comprehensiveness. Do highly detailed listings inherently attract higher bids?")
     
     if not df_effort.empty:
-        # Filter out extreme outliers (e.g., blank descriptions)
         df_effort = df_effort[(df_effort['Total_Word_Count'] > 50) & (df_effort['Total_Word_Count'] < 1000)]
         
-        # Bucket the data to make it readable
-        labels = ["1: Short & Sweet", "2: Standard Detail", "3: Highly Detailed"]
-        df_effort['Listing_Length_Tier'] = pd.qcut(df_effort['Total_Word_Count'], q=3, labels=labels)
+        # 1. Create Price Tiers to compare apples-to-apples
+        bins = [0, 30000, 80000, float('inf')]
+        price_labels = ['Under $30k (Entry)', '$30k - $80k (Premium)', 'Over $80k (High-End)']
+        df_effort['Market_Segment'] = pd.cut(df_effort['Sold_Price'], bins=bins, labels=price_labels)
         
-        effort_summary = df_effort.groupby("Listing_Length_Tier")['Sold_Price'].mean()
+        # 2. Create Detail Tiers
+        detail_labels = ["1: Short & Sweet", "2: Standard Detail", "3: Highly Detailed"]
+        df_effort['Detail_Level'] = pd.qcut(df_effort['Total_Word_Count'], q=3, labels=detail_labels)
         
-        st.write("### Average Price by Description Length")
-        st.bar_chart(effort_summary)
+        # 3. Pivot the data to create a grouped bar chart
+        pivot = df_effort.pivot_table(index='Market_Segment', columns='Detail_Level', values='Sold_Price', aggfunc='mean')
+        
+        st.write("### Average Sale Price by Market Segment")
+        st.caption("By segmenting the market, we can see if a detailed description adds more value to a cheap project car or an expensive supercar.")
+        st.bar_chart(pivot)
         
         st.divider()
         st.write("### The Raw Data (Word Count vs. Price)")
-        st.scatter_chart(df_effort, x="Total_Word_Count", y="Sold_Price")
+        st.scatter_chart(df_effort, x="Total_Word_Count", y="Sold_Price", color="Market_Segment")
