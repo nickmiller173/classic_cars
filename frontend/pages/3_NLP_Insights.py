@@ -177,22 +177,23 @@ with tab4:
     }
     
     if not df_effort.empty and 'Highlights_WC' in df_effort.columns:
-        # Filter out extreme anomalies (e.g., someone writing a 1,000 word essay in one section)
-        for col in wc_columns.keys():
-            if col in df_effort.columns:
-                df_effort = df_effort[df_effort[col] < 600]
         
         import altair as alt
         
-        # Updated to remove segments and plot a single, clear trendline
+        # Updated to dynamically zoom by dropping the top 5% extreme outliers
         def build_scatter_trend(x_col, x_title, line_color):
-            # The scatter dots are all one subtle color now so they don't distract
-            scatter = alt.Chart(df_effort).mark_circle(opacity=0.3, size=50, color="#808495").encode(
+            # Calculate the 95th percentile for this specific metric and price
+            x_cap = df_effort[x_col].quantile(0.95)
+            y_cap = df_effort['Sold_Price'].quantile(0.95)
+            
+            # Create a localized dataframe that drops the extreme outliers
+            zoomed_df = df_effort[(df_effort[x_col] <= x_cap) & (df_effort['Sold_Price'] <= y_cap)]
+            
+            scatter = alt.Chart(zoomed_df).mark_circle(opacity=0.3, size=50, color="#808495").encode(
                 x=alt.X(f'{x_col}:Q', title=f"{x_title} Word Count"),
                 y=alt.Y('Sold_Price:Q', title="Sold Price ($)")
             )
             
-            # A single bold trendline slices through the noise
             trendline = scatter.transform_regression(
                 x_col, 'Sold_Price'
             ).mark_line(size=5, color=line_color)
@@ -200,17 +201,13 @@ with tab4:
             return scatter + trendline
 
         st.write("### Head-to-Head Section Comparison")
-        st.caption("While sale prices naturally vary wildly between different car models, the colored trendlines cut through the noise to show the general correlation between text length and final bids.")
+        st.caption("These charts are dynamically zoomed to the 95th percentile, hiding extreme outliers so you can clearly see the core market trends.")
         col1, col2 = st.columns(2)
         
         with col1:
-            # Default to Highlights
             section_1 = st.selectbox("Select First Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=0)
-            # Teal trendline
             st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], '#00bfa5'), use_container_width=True)
             
         with col2:
-            # Default to Known Flaws
             section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
-            # Red/Orange trendline
             st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#ff5252'), use_container_width=True)
