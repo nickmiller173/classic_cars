@@ -87,7 +87,63 @@ def lambda_handler(event, context):
     prediction_log = model.predict(input_df)
     estimated_price = np.expm1(prediction_log[0])
 
+    # Everything below is to add SHAP values to the model insights page
+    prediction_log = model.predict(input_df)[0]
+    final_price = float(np.expm1(prediction_log))
+    
+    # Extract the preprocessor and the tree model from the pipeline
+    # Note: SHould change 'xgb' to other model name if model family ever changes
+    preprocessor = model.named_steps['preprocessor']
+    tree_model = model.named_steps['xgb'] 
+    
+    # Transform the input data into the exact numeric array the tree sees
+    X_transformed = preprocessor.transform(input_df)
+    
+    # Generate SHAP values using the TreeExplainer
+    explainer = shap.TreeExplainer(tree_model)
+    shap_values = explainer.shap_values(X_transformed)
+    
+    # Extract the base expected value
+    base_value_log = explainer.expected_value
+    if isinstance(base_value_log, np.ndarray):
+        base_value_log = base_value_log[0]
+        
+    base_price = float(np.expm1(base_value_log))
+    
+    # Approximate the Dollar Impact of each feature
+    # Because the model predicts in log-space, distribute the final dollar price proportionally based on the log-space SHAP impacts.
+    feature_names = input_df.columns.tolist()
+    log_impacts = shap_values[0] 
+    total_log_impact = np.sum(log_impacts)
+    dollar_difference = final_price - base_price
+    
+    shap_breakdown = {"Base Market Value": base_price}
+    
+    # Isolate the top 5 most impactful features to keep the frontend chart clean
+    impact_magnitudes = np.abs(log_impacts)
+    top_5_indices = np.argsort(impact_magnitudes)[-5:]
+    
+    for idx in top_5_indices:
+        feat_name = feature_names[idx]
+        log_val = log_impacts[idx]
+        
+        # Proportional dollar allocation
+        if total_log_impact != 0:
+            dollar_impact = (log_val / total_log_impact) * dollar_difference
+        else:
+            dollar_impact = 0
+            
+        shap_breakdown[feat_name] = float(dollar_impact)
+        
+    # Group all remaining minor features into an "Other Factors" bucket to ensure the math balances
+    other_impact = dollar_difference - sum([v for k, v in shap_breakdown.items() if k != "Base Market Value"])
+    shap_breakdown["Other Factors"] = float(other_impact)
+
+    # 7. Return the updated JSON response
     return {
-        'statusCode': 200,
-        'body': json.dumps({'estimated_price': float(estimated_price)})
+        "statusCode": 200,
+        "body": json.dumps({
+            "estimated_price": final_price,
+            "shap_breakdown": shap_breakdown
+        })
     }

@@ -22,13 +22,15 @@ df_dashboard = load_data("dashboard_data.csv")
 df_brands = load_data("nlp_brands.csv")
 df_archetypes = load_data("nlp_archetypes.csv")
 df_effort = load_data("nlp_effort_scores.csv")
+df_buzzwords = load_data("nlp_buzzwords.csv")
 
 # --- 2. Setup Tabs ---
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "General Keywords", 
     "Aftermarket Brands", 
     "Listing Archetypes", 
-    "Listing Detail"
+    "Listing Detail",
+    "Auction Buzzwords"
 ])
 
 # --- TAB 1: ORIGINAL KEYWORDS ---
@@ -246,3 +248,30 @@ with tab4:
         with col2:
             section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
             st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#ff5252'), use_container_width=True)
+
+# --- TAB 5: AUCTION BUZZWORDS ---
+with tab5:
+    st.subheader("The 'Auction Buzzword' Impact Analyzer")
+    st.markdown("Which specific words or phrases extracted from the text associate with the highest premium or the steepest discount?")
+    
+    if not df_buzzwords.empty:
+        # Split into top 15 premium and top 15 discount words
+        top_premium = df_buzzwords[df_buzzwords['Impact_Value'] > 0].nlargest(15, 'Impact_Value')
+        top_discount = df_buzzwords[df_buzzwords['Impact_Value'] < 0].nsmallest(15, 'Impact_Value')
+        
+        combined_buzzwords = pd.concat([top_premium, top_discount])
+        
+        buzz_bar = alt.Chart(combined_buzzwords).mark_bar().encode(
+            x=alt.X('Impact_Value:Q', title="Dollar Impact on Final Price ($)"),
+            y=alt.Y('Word:N', sort='-x', title="Extracted Keyword/Phrase"),
+            color=alt.condition(
+                alt.datum.Impact_Value > 0,
+                alt.value('#00bfa5'),  # Teal for Premium
+                alt.value('#ff5252')   # Red for Discount
+            ),
+            tooltip=['Word', 'Impact_Value', 'Frequency']
+        )
+        
+        st.altair_chart(buzz_bar, use_container_width=True)
+    else:
+        st.warning("Buzzword data not found. Export TF-IDF coefficients to nlp_buzzwords.csv.")

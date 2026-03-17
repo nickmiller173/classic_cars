@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import os
 import plotly.express as px
+import plotly.graph_objects as go
 
 # --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
@@ -50,6 +51,18 @@ def load_pdp_data():
         return pd.DataFrame()
 
 df_pdp = load_pdp_data()
+
+@st.cache_data
+def load_residual_data():
+    file_path = "../data/frontend_data/residual_data.csv"
+    if not os.path.exists(file_path):
+        file_path = "data/frontend_data/residual_data.csv"
+    try:
+        return pd.read_csv(file_path)
+    except FileNotFoundError:
+        return pd.DataFrame()
+
+df_residuals = load_residual_data()
 
 # --- UI HEADER ---
 st.title("carsandbids.com 🚗 Classic Car Price Estimator")
@@ -215,6 +228,7 @@ with tab1:
                 
                 if response.status_code == 200:
                     result = response.json()
+                    st.session_state['last_prediction'] = result
                     if 'estimated_price' in result:
                         price = result['estimated_price']
                     elif 'body' in result:
@@ -320,31 +334,82 @@ with tab1:
                 st.error(f"Connection failed: {e}")
 
 with tab2:
-    st.subheader("📈 Partial Dependency Insights")
-    st.markdown("Explore how individual vehicle attributes impact the model's estimated price, assuming all other variables remain constant.")
+    st.title("📈 Model Insights")
+    
+    # --- IDEA 1: SHAP WATERFALL ---
+    st.subheader("1. The 'Why This Price?' Breakdown")
+    st.markdown("A localized look at exactly how the model arrived at the valuation for the specific car you just submitted.")
+    
+    if 'last_prediction' in st.session_state and 'shap_breakdown' in st.session_state['last_prediction']:
+        shap_data = st.session_state['last_prediction']['shap_breakdown']
+        
+        # Format for Plotly Waterfall
+        features = list(shap_data.keys())
+        values = list(shap_data.values())
+        
+        fig_waterfall = go.Figure(go.Waterfall(
+            orientation="v",
+            measure=["absolute"] + ["relative"] * (len(features) - 1) + ["total"],
+            x=features + ["Final Estimate"],
+            y=values + [sum(values)],
+            textposition="outside",
+            text=[f"${v:,.0f}" for v in values] + [f"${sum(values):,.0f}"],
+            decreasing={"marker": {"color": "#ff5252"}},
+            increasing={"marker": {"color": "#00bfa5"}},
+            totals={"marker": {"color": "#3b82f6"}}
+        ))
+        
+        fig_waterfall.update_layout(title="Feature Impact on Final Price", waterfallgap=0.3)
+        st.plotly_chart(fig_waterfall, use_container_width=True)
+    else:
+        st.info("Submit a vehicle on the Price Predictor tab to see its specific valuation breakdown here.")
+
+    st.divider()
+
+    # --- IDEA 3: RESIDUAL MATRIX ---
+    st.subheader("2. Market Hype vs. Value (Residual Analysis)")
+    st.markdown("Compare actual auction hammer prices against the model's prediction. Cars far above the line represent 'Bidding Wars' (Hype), while cars below the line represent 'Well Bought' deals (Value).")
+    
+    if not df_residuals.empty:
+        # Calculate the error to color code the dots
+        df_residuals['Error'] = df_residuals['Sold_Price'] - df_residuals['Predicted_Price']
+        
+        fig_scatter = px.scatter(
+            df_residuals, 
+            x='Predicted_Price', 
+            y='Sold_Price', 
+            hover_data=['Make', 'Model', 'Year'],
+            color='Error',
+            color_continuous_scale=["#3b82f6", "#e2e8f0", "#ff5252"], # Blue to Grey to Red
+            labels={'Predicted_Price': 'Model Estimated Value ($)', 'Sold_Price': 'Actual Hammer Price ($)'}
+        )
+        
+        # Add the ideal 1:1 line where Prediction == Actual
+        max_val = max(df_residuals['Predicted_Price'].max(), df_residuals['Sold_Price'].max())
+        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="black", dash="dash"))
+        
+        st.plotly_chart(fig_scatter, use_container_width=True)
+    else:
+        st.warning("Residual data not found. Export test set predictions to residual_data.csv.")
+
+    st.divider()
+
+    # --- EXISTING PDP PLOTS ---
+    st.subheader("3. Partial Dependency Insights (Macro Trends)")
+    st.markdown("Explore how individual vehicle attributes impact the model's estimated price across the entire market, assuming all other variables remain constant.")
     
     if not df_pdp.empty:
         features = sorted(df_pdp['Feature'].unique())
         selected_feature = st.selectbox("Select a Variable to Analyze:", features)
         
-        # Filter the data based on the dropdown
         feature_data = df_pdp[df_pdp['Feature'] == selected_feature]
         
-        # Plot using Plotly for interactivity
-        fig = px.line(
-            feature_data, 
-            x='Feature_Value', 
-            y='Predicted_Price',
-            title=f"Impact of {selected_feature} on Sold Price",
-            labels={
-                'Feature_Value': selected_feature, 
-                'Predicted_Price': 'Estimated Price ($)'
-            },
+        fig_pdp = px.line(
+            feature_data, x='Feature_Value', y='Predicted_Price',
+            labels={'Feature_Value': selected_feature, 'Predicted_Price': 'Estimated Price ($)'},
             markers=True
         )
-        
-        # Format the Y-axis as currency
-        fig.update_layout(yaxis_tickformat="$,.0f")
-        st.plotly_chart(fig, use_container_width=True)
+        fig_pdp.update_layout(yaxis_tickformat="$,.0f")
+        st.plotly_chart(fig_pdp, use_container_width=True)
     else:
-        st.warning("PDP data not found. Please run the PDP generation script to create the CSV.")
+        st.warning("PDP data not found. Please run the PDP generation script.")

@@ -1,14 +1,17 @@
-# 1. Start with the AWS base image for Python 3.9
 FROM public.ecr.aws/lambda/python:3.12
 
-# 2. Copy the requirements file first (for caching speed)
+# Install C++ compilers needed to build the SHAP library
+RUN dnf install -y gcc gcc-c++
+
 COPY requirements.txt ${LAMBDA_TASK_ROOT}
 
-# 3. Install the libraries
 RUN pip install -r requirements.txt
 
-# 4. Copy your actual code and your specific artifact files
-COPY app.py utils.py model_artifacts_002.pkl encoding_artifacts_002.pkl ${LAMBDA_TASK_ROOT}/
+# Copy your application code
+COPY app.py ${LAMBDA_TASK_ROOT}
+COPY utils.py ${LAMBDA_TASK_ROOT}
 
-# 5. Tell the container to run the 'lambda_handler' function inside 'app.py'
+# Copy the model artifacts
+COPY model_artifacts_002.pkl ${LAMBDA_TASK_ROOT}
+
 CMD [ "app.lambda_handler" ]
