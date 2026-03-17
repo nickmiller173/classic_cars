@@ -46,7 +46,7 @@ with tab1:
             'emissions_ind': 'Emissions Mentioned',
             'loan_ind': 'Active Loan / Lien',
             'one_owner_ind': 'Single Owner History',
-            'carfax_ind': 'Carfax Damage Mentioned',
+            'carfax_ind': 'Carfax Mentioned',
             'recent_major_service': 'Recent Major Service (Timing Belt, etc.)'
         }
         
