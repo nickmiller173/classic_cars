@@ -1,7 +1,5 @@
 import json
 import pickle
-import tempfile
-import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -30,13 +28,12 @@ model = model_artifacts['model']
 train_cols = model_artifacts['training_columns']
 
 # The old pickled XGBoost model stores base_score as '[7.041526E-1]' (with brackets),
-# which SHAP cannot parse. Save and reload the booster to normalize it to current format.
+# which SHAP cannot parse via float(). Patch the live booster config directly to strip them.
 _booster = model.named_steps['xgb'].get_booster()
-with tempfile.NamedTemporaryFile(suffix='.ubj', delete=False) as _f:
-    _tmp_path = _f.name
-_booster.save_model(_tmp_path)
-_booster.load_model(_tmp_path)
-os.unlink(_tmp_path)
+_config = json.loads(_booster.save_config())
+_bs = _config['learner']['learner_model_param']['base_score']
+_config['learner']['learner_model_param']['base_score'] = _bs.strip('[]')
+_booster.load_config(json.dumps(_config))
 label_encoders = encoding_artifacts['label_encoders']
 tfidf_vectorizer = encoding_artifacts['tfidf_vectorizer'] # NEW: Load TF-IDF
 svd_model = encoding_artifacts['svd_model']               # NEW: Load SVD
