@@ -2,9 +2,20 @@ import json
 import pickle
 import pandas as pd
 import numpy as np
-import shap
 from datetime import datetime
 from utils import engineer_sharp_features
+
+# Lazy-loaded to avoid crashing the Lambda init phase (shap is too heavy to import at module level)
+_shap = None
+_explainer = None
+def get_explainer(tree_model):
+    global _shap, _explainer
+    if _explainer is None:
+        if _shap is None:
+            import shap as shap_module
+            _shap = shap_module
+        _explainer = _shap.TreeExplainer(tree_model)
+    return _explainer
 
 # 1. Load Artifacts
 with open('model_artifacts_002.pkl', 'rb') as f:
@@ -85,10 +96,6 @@ def lambda_handler(event, context):
     input_df = input_df.reindex(columns=train_cols, fill_value=0)
 
     # 9. Predict & Reverse Log Transform
-    prediction_log = model.predict(input_df)
-    estimated_price = np.expm1(prediction_log[0])
-
-    # Everything below is to add SHAP values to the model insights page
     prediction_log = model.predict(input_df)[0]
     final_price = float(np.expm1(prediction_log))
     
@@ -101,7 +108,7 @@ def lambda_handler(event, context):
     X_transformed = preprocessor.transform(input_df)
     
     # Generate SHAP values using the TreeExplainer
-    explainer = shap.TreeExplainer(tree_model)
+    explainer = get_explainer(tree_model)
     shap_values = explainer.shap_values(X_transformed)
     
     # Extract the base expected value
