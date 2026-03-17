@@ -1,5 +1,7 @@
 import json
 import pickle
+import tempfile
+import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -26,6 +28,15 @@ with open('encoding_artifacts_002.pkl', 'rb') as f:
 
 model = model_artifacts['model']
 train_cols = model_artifacts['training_columns']
+
+# The old pickled XGBoost model stores base_score as '[7.041526E-1]' (with brackets),
+# which SHAP cannot parse. Save and reload the booster to normalize it to current format.
+_booster = model.named_steps['xgb'].get_booster()
+with tempfile.NamedTemporaryFile(suffix='.ubj', delete=False) as _f:
+    _tmp_path = _f.name
+_booster.save_model(_tmp_path)
+_booster.load_model(_tmp_path)
+os.unlink(_tmp_path)
 label_encoders = encoding_artifacts['label_encoders']
 tfidf_vectorizer = encoding_artifacts['tfidf_vectorizer'] # NEW: Load TF-IDF
 svd_model = encoding_artifacts['svd_model']               # NEW: Load SVD
@@ -120,7 +131,7 @@ def lambda_handler(event, context):
     
     # Approximate the Dollar Impact of each feature
     # Because the model predicts in log-space, distribute the final dollar price proportionally based on the log-space SHAP impacts.
-    feature_names = input_df.columns.tolist()
+    feature_names = [n.split('__')[-1] for n in preprocessor.get_feature_names_out()]
     log_impacts = shap_values[0] 
     total_log_impact = np.sum(log_impacts)
     dollar_difference = final_price - base_price
