@@ -349,7 +349,7 @@ with tab2:
     
     # --- SHAP GLOBAL FEATURE IMPORTANCE ---
     st.subheader("1. What Drives Price? (Global Feature Importance)")
-    st.markdown("The top features influencing auction prices across the entire dataset, ranked by their average absolute SHAP value.")
+    st.markdown("Think of this as the model's voting card — the longer the bar, the more that feature consistently swayed price estimates across thousands of auctions. It doesn't tell you which direction, just how much each factor matters overall.")
 
     if not df_shap.empty:
         fig_shap = alt.Chart(df_shap).mark_bar(color='#00bfa5').encode(
@@ -365,7 +365,7 @@ with tab2:
 
     # --- IDEA 3: RESIDUAL MATRIX ---
     st.subheader("2. Market Hype vs. Value (Residual Analysis)")
-    st.markdown("Compare actual auction hammer prices against the model's prediction. Cars far above the line represent 'Bidding Wars' (Hype), while cars below the line represent 'Well Bought' deals (Value).")
+    st.markdown("Each dot is a real auction result. If a dot sits above the diagonal line, that car sold for more than the model expected — usually a bidding war or rare find. Below the line means the buyer likely got a deal.")
     
     if not df_residuals.empty:
         df_residuals['Error'] = df_residuals['Sold_Price'] - df_residuals['Predicted_Price']
@@ -392,7 +392,7 @@ with tab2:
 
     # --- EXISTING PDP PLOTS ---
     st.subheader("3. Partial Dependency Insights (Macro Trends)")
-    st.markdown("Explore how individual vehicle attributes impact the model's estimated price across the entire market, assuming all other variables remain constant.")
+    st.markdown("This shows what happens to the estimated price when you slide just one variable up or down while everything else stays fixed — like a test drive for a single feature to see how the model reacts to it.")
     
     if not df_pdp.empty:
         features = sorted(df_pdp['Feature'].unique())

@@ -72,7 +72,7 @@ with tab1:
         impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
         
         st.write("### Resale Value Impact")
-        st.caption("Shows the percentage increase or decrease in average sale price when this feature is mentioned in the listing.")
+        st.caption("Each bar shows whether mentioning a feature in the listing tends to help or hurt the final sale price — teal means it adds value on average, red means it's typically associated with a discount.")
         
         import altair as alt
         
@@ -122,7 +122,7 @@ with tab2:
         
         st.divider()
         st.write("### Brand Exclusivity vs. Value Premium")
-        st.caption("Brands higher on the Y-Axis command a larger percentage premium over the baseline. Brands further to the right are more common.")
+        st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it tends to command; the further right, the more commonly it shows up in listings.")
         
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
         df_exploded = df_exploded[df_exploded['Extracted_Brands_List'] != '']
@@ -175,9 +175,10 @@ with tab3:
         
         import altair as alt
         col1, col2 = st.columns([1, 1])
-        
+
         with col1:
             st.write("#### Market Share Distribution")
+            st.caption("How the market splits across the four listing archetypes — essentially, which type of car listing is most common on the platform.")
             pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
                 color=alt.Color(field="Archetype", type="nominal", legend=alt.Legend(title="Archetypes", orient="bottom")),
@@ -187,6 +188,7 @@ with tab3:
             
         with col2:
             st.write("#### Average Sold Price")
+            st.caption("The average hammer price for each archetype — so you can see which type of listing tends to attract the most money at auction.")
             # Upgraded to Altair to sync colors with the pie chart and fix label clipping
             bar = alt.Chart(arch_summary).mark_bar().encode(
                 x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300)),
@@ -238,7 +240,7 @@ with tab4:
             
             return scatter + trendline
 
-        st.caption("These charts are dynamically zoomed to the 95th percentile, hiding extreme outliers so you can clearly see the core market trends.")
+        st.caption("Each dot is a real listing — the trendline shows whether writing more words in that section tends to push prices higher or lower. Charts are zoomed to the 95th percentile to hide outliers and keep the trend readable.")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -254,6 +256,8 @@ with tab5:
     st.subheader("The 'Auction Buzzword' Impact Analyzer")
     st.markdown("Which specific words or phrases extracted from the text associate with the highest premium or the steepest discount?")
     
+    st.caption("These are the specific words and phrases that, when they appear in a listing, most consistently push prices up (teal) or pull them down (red) based on thousands of historical auction results.")
+
     if not df_buzzwords.empty:
         # Split into top 15 premium and top 15 discount words
         top_premium = df_buzzwords[df_buzzwords['Impact_Value'] > 0].nlargest(15, 'Impact_Value')

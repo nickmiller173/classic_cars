@@ -21,6 +21,7 @@ if not df.empty:
 
     with col1:
         st.subheader("Average Sale Price Over Time")
+        st.caption("Tracks the average hammer price across all auctions by month — a simple way to see whether the classic car market is heating up or cooling down over time.")
         trend_df = df.groupby(['auction_year', 'auction_month'])['Sold_Price'].mean().reset_index()
         trend_df['Date'] = pd.to_datetime(trend_df['auction_year'].astype(str) + '-' + trend_df['auction_month'].astype(str) + '-01')
         trend_df = trend_df.sort_values('Date')
@@ -34,6 +35,7 @@ if not df.empty:
 
     with col2:
         st.subheader("Top 10 Makes by Average Price")
+        st.caption("Among makes with at least 50 sales, these are the ones commanding the highest prices at auction — not the most common makes, just the most valuable ones.")
         make_counts = df['Make'].value_counts()
         valid_makes = make_counts[make_counts >= 50].index
 
