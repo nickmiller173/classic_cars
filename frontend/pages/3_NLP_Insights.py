@@ -160,7 +160,7 @@ with tab2:
         scatter = alt.Chart(brand_impact).mark_circle(size=100).encode(
             x=alt.X('Total_Mentions:Q', title='Total Listing Mentions'),
             y=alt.Y('Premium_Pct:Q', title='Price Premium vs Baseline (%)'),
-            color=alt.Color('Brand:N', legend=None),
+            color=alt.Color('Brand:N', scale=alt.Scale(scheme='browns'), legend=None),
             tooltip=['Brand', 'Total_Mentions', 'Premium_Pct']
         )
         
@@ -197,7 +197,9 @@ with tab3:
             st.caption("How the market splits across the four listing archetypes — essentially, which type of car listing is most common on the platform.")
             pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
-                color=alt.Color(field="Archetype", type="nominal", legend=alt.Legend(title="Archetypes", orient="bottom")),
+                color=alt.Color(field="Archetype", type="nominal",
+                            scale=alt.Scale(range=['#C4895A', '#8B5E3C', '#8B3A3A', '#D4B896']),
+                            legend=alt.Legend(title="Archetypes", orient="bottom")),
                 tooltip=['Archetype', 'Market_Share', 'Average_Price']
             )
             st.altair_chart(pie, use_container_width=True)
@@ -209,7 +211,7 @@ with tab3:
             bar = alt.Chart(arch_summary).mark_bar().encode(
                 x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300, labelOverlap=False)),
                 y=alt.Y("Average_Price:Q", title="Average Price ($)", scale=alt.Scale(zero=False)),
-                color=alt.Color("Archetype:N", legend=None), # Syncs color to the pie chart
+                color=alt.Color("Archetype:N", scale=alt.Scale(range=['#C4895A', '#8B5E3C', '#8B3A3A', '#D4B896']), legend=None),
                 tooltip=['Archetype', 'Average_Price']
             )
             st.altair_chart(bar, use_container_width=True)
