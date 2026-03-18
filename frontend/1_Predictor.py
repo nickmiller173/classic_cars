@@ -64,6 +64,18 @@ def load_residual_data():
 
 df_residuals = load_residual_data()
 
+@st.cache_data
+def load_shap_importance():
+    file_path = "../data/frontend_data/shap_importance.csv"
+    if not os.path.exists(file_path):
+        file_path = "data/frontend_data/shap_importance.csv"
+    try:
+        return pd.read_csv(file_path)
+    except FileNotFoundError:
+        return pd.DataFrame()
+
+df_shap = load_shap_importance()
+
 # --- UI HEADER ---
 st.title("carsandbids.com 🚗 Classic Car Price Estimator")
 st.markdown("Instantly estimate the auction value of a classic car based on its specs and historical condition reports.")
@@ -336,33 +348,24 @@ with tab1:
 with tab2:
     st.title("📈 Model Insights")
     
-    # --- IDEA 1: SHAP WATERFALL ---
-    st.subheader("1. The 'Why This Price?' Breakdown")
-    st.markdown("A localized look at exactly how the model arrived at the valuation for the specific car you just submitted.")
-    
-    if 'last_prediction' in st.session_state and 'shap_breakdown' in st.session_state['last_prediction']:
-        shap_data = st.session_state['last_prediction']['shap_breakdown']
-        
-        # Format for Plotly Waterfall
-        features = list(shap_data.keys())
-        values = list(shap_data.values())
-        
-        fig_waterfall = go.Figure(go.Waterfall(
-            orientation="v",
-            measure=["absolute"] + ["relative"] * (len(features) - 1) + ["total"],
-            x=features + ["Final Estimate"],
-            y=values + [sum(values)],
-            textposition="outside",
-            text=[f"${v:,.0f}" for v in values] + [f"${sum(values):,.0f}"],
-            decreasing={"marker": {"color": "#ff5252"}},
-            increasing={"marker": {"color": "#00bfa5"}},
-            totals={"marker": {"color": "#3b82f6"}}
-        ))
-        
-        fig_waterfall.update_layout(title="Feature Impact on Final Price", waterfallgap=0.3)
-        st.plotly_chart(fig_waterfall, use_container_width=True)
+    # --- SHAP GLOBAL FEATURE IMPORTANCE ---
+    st.subheader("1. What Drives Price? (Global Feature Importance)")
+    st.markdown("The top features influencing auction prices across the entire dataset, ranked by their average absolute SHAP value.")
+
+    if not df_shap.empty:
+        fig_shap = px.bar(
+            df_shap.sort_values('mean_abs_shap'),
+            x='mean_abs_shap',
+            y='feature',
+            orientation='h',
+            labels={'mean_abs_shap': 'Mean Absolute SHAP Value (log $)', 'feature': 'Feature'},
+            color='mean_abs_shap',
+            color_continuous_scale=["#93c5fd", "#3b82f6", "#1d4ed8"]
+        )
+        fig_shap.update_layout(coloraxis_showscale=False, yaxis_title=None)
+        st.plotly_chart(fig_shap, use_container_width=True)
     else:
-        st.info("Submit a vehicle on the Price Predictor tab to see its specific valuation breakdown here.")
+        st.warning("SHAP importance data not found. Run the SHAP cell in model_insights.ipynb and export shap_importance.csv.")
 
     st.divider()
 

@@ -1,6 +1,5 @@
 import json
 import pickle
-import xgboost as xgb
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -88,53 +87,10 @@ def lambda_handler(event, context):
     # 9. Predict & Reverse Log Transform
     prediction_log = model.predict(input_df)[0]
     final_price = float(np.expm1(prediction_log))
-    
-    # Extract the preprocessor and the tree model from the pipeline
-    # Note: SHould change 'xgb' to other model name if model family ever changes
-    preprocessor = model.named_steps['preprocessor']
-    tree_model = model.named_steps['xgb'] 
-    
-    # Transform the input data into the exact numeric array the tree sees
-    X_transformed = preprocessor.transform(input_df)
 
-    # Use XGBoost's native SHAP computation (pred_contribs=True) - avoids the SHAP library entirely.
-    # Output shape: (1, n_features + 1) where the last column is the bias term (expected value).
-    contribs = tree_model.get_booster().predict(xgb.DMatrix(X_transformed), pred_contribs=True, approx_contribs=True)
-    base_value_log = float(contribs[0, -1])
-    base_price = float(np.expm1(base_value_log))
-
-    feature_names = [n.split('__')[-1] for n in preprocessor.get_feature_names_out()]
-    log_impacts = contribs[0, :-1]
-    total_log_impact = np.sum(log_impacts)
-    dollar_difference = final_price - base_price
-    
-    shap_breakdown = {"Base Market Value": base_price}
-    
-    # Isolate the top 5 most impactful features to keep the frontend chart clean
-    impact_magnitudes = np.abs(log_impacts)
-    top_5_indices = np.argsort(impact_magnitudes)[-5:]
-    
-    for idx in top_5_indices:
-        feat_name = feature_names[idx]
-        log_val = log_impacts[idx]
-        
-        # Proportional dollar allocation
-        if total_log_impact != 0:
-            dollar_impact = (log_val / total_log_impact) * dollar_difference
-        else:
-            dollar_impact = 0
-            
-        shap_breakdown[feat_name] = float(dollar_impact)
-        
-    # Group all remaining minor features into an "Other Factors" bucket to ensure the math balances
-    other_impact = dollar_difference - sum([v for k, v in shap_breakdown.items() if k != "Base Market Value"])
-    shap_breakdown["Other Factors"] = float(other_impact)
-
-    # 7. Return the updated JSON response
     return {
         "statusCode": 200,
         "body": json.dumps({
-            "estimated_price": final_price,
-            "shap_breakdown": shap_breakdown
+            "estimated_price": final_price
         })
     }
