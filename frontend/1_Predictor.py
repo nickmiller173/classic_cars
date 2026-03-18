@@ -2,9 +2,8 @@ import streamlit as st
 import requests
 import json
 import pandas as pd
+import altair as alt
 import os
-import plotly.express as px
-import plotly.graph_objects as go
 
 # --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
@@ -353,17 +352,12 @@ with tab2:
     st.markdown("The top features influencing auction prices across the entire dataset, ranked by their average absolute SHAP value.")
 
     if not df_shap.empty:
-        fig_shap = px.bar(
-            df_shap.sort_values('mean_abs_shap'),
-            x='mean_abs_shap',
-            y='feature',
-            orientation='h',
-            labels={'mean_abs_shap': 'Mean Absolute SHAP Value (log $)', 'feature': 'Feature'},
-            color='mean_abs_shap',
-            color_continuous_scale=["#93c5fd", "#3b82f6", "#1d4ed8"]
+        fig_shap = alt.Chart(df_shap).mark_bar(color='#00bfa5').encode(
+            x=alt.X('mean_abs_shap:Q', title='Mean Absolute SHAP Value (log $)'),
+            y=alt.Y('feature:N', sort='-x', title=None),
+            tooltip=['feature', alt.Tooltip('mean_abs_shap:Q', format='.4f', title='Importance')]
         )
-        fig_shap.update_layout(coloraxis_showscale=False, yaxis_title=None)
-        st.plotly_chart(fig_shap, use_container_width=True)
+        st.altair_chart(fig_shap, use_container_width=True)
     else:
         st.warning("SHAP importance data not found. Run the SHAP cell in model_insights.ipynb and export shap_importance.csv.")
 
@@ -374,24 +368,23 @@ with tab2:
     st.markdown("Compare actual auction hammer prices against the model's prediction. Cars far above the line represent 'Bidding Wars' (Hype), while cars below the line represent 'Well Bought' deals (Value).")
     
     if not df_residuals.empty:
-        # Calculate the error to color code the dots
         df_residuals['Error'] = df_residuals['Sold_Price'] - df_residuals['Predicted_Price']
-        
-        fig_scatter = px.scatter(
-            df_residuals, 
-            x='Predicted_Price', 
-            y='Sold_Price', 
-            hover_data=['Make', 'Model', 'Year'],
-            color='Error',
-            color_continuous_scale=["#3b82f6", "#e2e8f0", "#ff5252"], # Blue to Grey to Red
-            labels={'Predicted_Price': 'Model Estimated Value ($)', 'Sold_Price': 'Actual Hammer Price ($)'}
-        )
-        
-        # Add the ideal 1:1 line where Prediction == Actual
         max_val = max(df_residuals['Predicted_Price'].max(), df_residuals['Sold_Price'].max())
-        fig_scatter.add_shape(type="line", x0=0, y0=0, x1=max_val, y1=max_val, line=dict(color="black", dash="dash"))
-        
-        st.plotly_chart(fig_scatter, use_container_width=True)
+
+        scatter = alt.Chart(df_residuals).mark_circle(opacity=0.4, size=50).encode(
+            x=alt.X('Predicted_Price:Q', title='Model Estimated Value ($)', axis=alt.Axis(format='$,.0f')),
+            y=alt.Y('Sold_Price:Q', title='Actual Hammer Price ($)', axis=alt.Axis(format='$,.0f')),
+            color=alt.Color('Error:Q', scale=alt.Scale(domainMid=0, scheme='blueorange'), legend=None),
+            tooltip=['Make', 'Model', 'Year',
+                     alt.Tooltip('Sold_Price:Q', format='$,.0f', title='Actual'),
+                     alt.Tooltip('Predicted_Price:Q', format='$,.0f', title='Predicted')]
+        )
+
+        diagonal = alt.Chart(
+            pd.DataFrame({'x': [0, max_val], 'y': [0, max_val]})
+        ).mark_line(color='black', strokeDash=[5, 5]).encode(x='x:Q', y='y:Q')
+
+        st.altair_chart(scatter + diagonal, use_container_width=True)
     else:
         st.warning("Residual data not found. Export test set predictions to residual_data.csv.")
 
@@ -407,12 +400,12 @@ with tab2:
         
         feature_data = df_pdp[df_pdp['Feature'] == selected_feature]
         
-        fig_pdp = px.line(
-            feature_data, x='Feature_Value', y='Predicted_Price',
-            labels={'Feature_Value': selected_feature, 'Predicted_Price': 'Estimated Price ($)'},
-            markers=True
+        fig_pdp = alt.Chart(feature_data).mark_line(color='#00bfa5', point=True).encode(
+            x=alt.X('Feature_Value:Q', title=selected_feature),
+            y=alt.Y('Predicted_Price:Q', title='Estimated Price ($)', axis=alt.Axis(format='$,.0f')),
+            tooltip=[alt.Tooltip('Feature_Value:Q', title=selected_feature),
+                     alt.Tooltip('Predicted_Price:Q', format='$,.0f', title='Est. Price')]
         )
-        fig_pdp.update_layout(yaxis_tickformat="$,.0f")
-        st.plotly_chart(fig_pdp, use_container_width=True)
+        st.altair_chart(fig_pdp, use_container_width=True)
     else:
         st.warning("PDP data not found. Please run the PDP generation script.")
