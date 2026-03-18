@@ -81,10 +81,12 @@ if not df.empty:
         col1, col2 = st.columns(2)
         with col1:
             makes = sorted(df['Make'].dropna().unique())
-            selected_make = st.selectbox("Make", makes)
+            default_make_idx = makes.index('Tesla') if 'Tesla' in makes else 0
+            selected_make = st.selectbox("Make", makes, index=default_make_idx)
         with col2:
             models = sorted(df[df['Make'] == selected_make]['Model'].dropna().unique())
-            selected_model = st.selectbox("Model", models)
+            default_model_idx = models.index('Cybertruck') if 'Cybertruck' in models else 0
+            selected_model = st.selectbox("Model", models, index=default_model_idx)
 
         filtered = df[(df['Make'] == selected_make) & (df['Model'] == selected_model)]
         trend = filtered.groupby(['auction_year', 'auction_month'])['Sold_Price'].agg(
@@ -162,11 +164,16 @@ if not df.empty:
     # --- TAB 4: MODEL YEAR SWEET SPOT ---
     with tab4:
         st.subheader("Model Year Sweet Spot")
-        st.caption("Pick a make and see which model years command the highest average prices — useful for spotting which vintages buyers are consistently willing to pay a premium for.")
+        st.caption("Pick a make and model to see which production years command the highest average prices — useful for pinpointing the exact vintage buyers are willing to pay a premium for.")
 
-        selected_make_t4 = st.selectbox("Make", sorted(df['Make'].dropna().unique()), key='tab4_make')
+        col1, col2 = st.columns(2)
+        with col1:
+            selected_make_t4 = st.selectbox("Make", sorted(df['Make'].dropna().unique()), key='tab4_make')
+        with col2:
+            models_t4 = sorted(df[df['Make'] == selected_make_t4]['Model'].dropna().unique())
+            selected_model_t4 = st.selectbox("Model", models_t4, key='tab4_model')
 
-        make_df = df[df['Make'] == selected_make_t4]
+        make_df = df[(df['Make'] == selected_make_t4) & (df['Model'] == selected_model_t4)]
         year_avg = make_df.groupby('Year')['Sold_Price'].agg(
             avg_price='mean', sales_count='count'
         ).reset_index()
