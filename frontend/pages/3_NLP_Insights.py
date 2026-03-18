@@ -46,7 +46,6 @@ with tab1:
             'has_new_tires': 'New Tires / Fresh Rubber',
             'has_sport_seats': 'Sport Seats (Recaro, Bucket, etc.)',
             'emissions_ind': 'Emissions Mentioned',
-            'loan_ind': 'Active Loan / Lien',
             'one_owner_ind': 'Single Owner History',
             'carfax_ind': 'Carfax Mentioned',
             'recent_major_service': 'Recent Major Service (Timing Belt, etc.)'
