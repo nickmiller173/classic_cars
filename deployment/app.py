@@ -99,7 +99,7 @@ def lambda_handler(event, context):
 
     # Use XGBoost's native SHAP computation (pred_contribs=True) - avoids the SHAP library entirely.
     # Output shape: (1, n_features + 1) where the last column is the bias term (expected value).
-    contribs = tree_model.get_booster().predict(xgb.DMatrix(X_transformed), pred_contribs=True)
+    contribs = tree_model.get_booster().predict(xgb.DMatrix(X_transformed), pred_contribs=True, approx_contribs=True)
     base_value_log = float(contribs[0, -1])
     base_price = float(np.expm1(base_value_log))
 
