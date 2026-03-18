@@ -1,21 +1,10 @@
 import json
 import pickle
+import xgboost as xgb
 import pandas as pd
 import numpy as np
 from datetime import datetime
 from utils import engineer_sharp_features
-
-# Lazy-loaded to avoid crashing the Lambda init phase (shap is too heavy to import at module level)
-_shap = None
-_explainer = None
-def get_explainer(tree_model):
-    global _shap, _explainer
-    if _explainer is None:
-        if _shap is None:
-            import shap as shap_module
-            _shap = shap_module
-        _explainer = _shap.TreeExplainer(tree_model)
-    return _explainer
 
 # 1. Load Artifacts
 with open('model_artifacts_002.pkl', 'rb') as f:
@@ -27,13 +16,6 @@ with open('encoding_artifacts_002.pkl', 'rb') as f:
 model = model_artifacts['model']
 train_cols = model_artifacts['training_columns']
 
-# The old pickled XGBoost model stores base_score as '[7.041526E-1]' (with brackets),
-# which SHAP cannot parse via float(). Patch the live booster config directly to strip them.
-_booster = model.named_steps['xgb'].get_booster()
-_config = json.loads(_booster.save_config())
-_bs = _config['learner']['learner_model_param']['base_score']
-_config['learner']['learner_model_param']['base_score'] = _bs.strip('[]')
-_booster.load_config(json.dumps(_config))
 label_encoders = encoding_artifacts['label_encoders']
 tfidf_vectorizer = encoding_artifacts['tfidf_vectorizer'] # NEW: Load TF-IDF
 svd_model = encoding_artifacts['svd_model']               # NEW: Load SVD
@@ -114,22 +96,15 @@ def lambda_handler(event, context):
     
     # Transform the input data into the exact numeric array the tree sees
     X_transformed = preprocessor.transform(input_df)
-    
-    # Generate SHAP values using the TreeExplainer
-    explainer = get_explainer(tree_model)
-    shap_values = explainer.shap_values(X_transformed)
-    
-    # Extract the base expected value
-    base_value_log = explainer.expected_value
-    if isinstance(base_value_log, np.ndarray):
-        base_value_log = base_value_log[0]
-        
+
+    # Use XGBoost's native SHAP computation (pred_contribs=True) - avoids the SHAP library entirely.
+    # Output shape: (1, n_features + 1) where the last column is the bias term (expected value).
+    contribs = tree_model.get_booster().predict(xgb.DMatrix(X_transformed), pred_contribs=True)
+    base_value_log = float(contribs[0, -1])
     base_price = float(np.expm1(base_value_log))
-    
-    # Approximate the Dollar Impact of each feature
-    # Because the model predicts in log-space, distribute the final dollar price proportionally based on the log-space SHAP impacts.
+
     feature_names = [n.split('__')[-1] for n in preprocessor.get_feature_names_out()]
-    log_impacts = shap_values[0] 
+    log_impacts = contribs[0, :-1]
     total_log_impact = np.sum(log_impacts)
     dollar_difference = final_price - base_price
     

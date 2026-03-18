@@ -1,5 +1,4 @@
 pandas
 numpy<2
 scikit-learn==1.7.2
-xgboost
-shap>=0.46.0
+xgboost==2.1.4
