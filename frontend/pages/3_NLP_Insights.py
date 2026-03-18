@@ -4,6 +4,23 @@ import pandas as pd
 import os
 
 st.set_page_config(page_title="NLP Insights", page_icon="📝", layout="wide")
+
+st.markdown("""
+<style>
+[data-testid="stMetric"] {
+    background-color: #EDE8DF;
+    border: 1px solid #C4A882;
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+.stTabs [aria-selected="true"] {
+    color: #8B5E3C !important;
+    border-bottom-color: #8B5E3C !important;
+}
+hr { border-color: #C4A882 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📝 Advanced Text Insights")
 st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, we can extract hidden themes that drive vehicle valuations on Cars & Bids.")
 
@@ -82,8 +99,8 @@ with tab1:
             # Dynamically color the bars: Teal for positive value, Red for penalty
             color=alt.condition(
                 alt.datum['Premium (%)'] > 0,
-                alt.value('#00bfa5'),  # Teal
-                alt.value('#ff5252')   # Red
+                alt.value('#C4895A'),  # Teal
+                alt.value('#8B3A3A')   # Red
             ),
             tooltip=['Feature', alt.Tooltip('Premium (%):Q', format='.1f', title='Impact (%)')]
         )
@@ -244,11 +261,11 @@ with tab4:
         
         with col1:
             section_1 = st.selectbox("Select First Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=0)
-            st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], '#00bfa5'), use_container_width=True)
+            st.altair_chart(build_scatter_trend(section_1, wc_columns[section_1], '#C4895A'), use_container_width=True)
             
         with col2:
             section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
-            st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#ff5252'), use_container_width=True)
+            st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#8B3A3A'), use_container_width=True)
 
 # --- TAB 5: AUCTION BUZZWORDS ---
 with tab5:
@@ -269,8 +286,8 @@ with tab5:
             y=alt.Y('Word:N', sort='-x', title="Extracted Keyword/Phrase"),
             color=alt.condition(
                 alt.datum.Impact_Value > 0,
-                alt.value('#00bfa5'),  # Teal for Premium
-                alt.value('#ff5252')   # Red for Discount
+                alt.value('#C4895A'),  # Teal for Premium
+                alt.value('#8B3A3A')   # Red for Discount
             ),
             tooltip=['Word', 'Impact_Value', 'Frequency']
         )

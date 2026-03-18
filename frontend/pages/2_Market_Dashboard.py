@@ -4,6 +4,23 @@ import altair as alt
 import os
 
 st.set_page_config(page_title="Market Dashboard", page_icon="📈", layout="wide")
+
+st.markdown("""
+<style>
+[data-testid="stMetric"] {
+    background-color: #EDE8DF;
+    border: 1px solid #C4A882;
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+.stTabs [aria-selected="true"] {
+    color: #8B5E3C !important;
+    border-bottom-color: #8B5E3C !important;
+}
+hr { border-color: #C4A882 !important; }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("📈 Classic Car Market Trends")
 st.markdown("Explore macroeconomic trends and brand performance across the auction platform.")
 
@@ -38,7 +55,7 @@ if not df.empty:
         )
         price_over_time = price_over_time.sort_values('Date')
 
-        line_overview = alt.Chart(price_over_time).mark_line(color='#00bfa5', point=True).encode(
+        line_overview = alt.Chart(price_over_time).mark_line(color='#C4895A', point=True).encode(
             x=alt.X('Date:T', title=''),
             y=alt.Y('Sold_Price:Q', title='Average Sale Price ($)',
                     scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
@@ -58,7 +75,7 @@ if not df.empty:
         st.caption("The ten makes with the highest average hammer price, filtered to brands with at least 50 sales — removes small-sample outliers so only well-represented brands appear.")
 
         top_makes = make_avg_filtered.nlargest(10, 'avg_price')
-        bar_top = alt.Chart(top_makes).mark_bar(color='#00bfa5').encode(
+        bar_top = alt.Chart(top_makes).mark_bar(color='#C4895A').encode(
             x=alt.X('Make:N', sort='-y', title='', axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
             y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
                     scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
@@ -74,7 +91,7 @@ if not df.empty:
         st.caption("The ten makes with the lowest average hammer price among well-represented brands — useful for spotting the more accessible end of the market.")
 
         bottom_makes = make_avg_filtered.nsmallest(10, 'avg_price')
-        bar_bottom = alt.Chart(bottom_makes).mark_bar(color='#ff5252').encode(
+        bar_bottom = alt.Chart(bottom_makes).mark_bar(color='#8B3A3A').encode(
             x=alt.X('Make:N', sort='y', title='', axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
             y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
                     scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
@@ -113,7 +130,7 @@ if not df.empty:
         trend = trend[trend['sales_count'] >= 2]
 
         if not trend.empty:
-            line = alt.Chart(trend).mark_line(color='#00bfa5', point=True).encode(
+            line = alt.Chart(trend).mark_line(color='#C4895A', point=True).encode(
                 x=alt.X('Date:T', title=''),
                 y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
                         scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
@@ -138,7 +155,7 @@ if not df.empty:
         )
         volume = volume.sort_values('Date')
 
-        bar = alt.Chart(volume).mark_bar(color='#00bfa5').encode(
+        bar = alt.Chart(volume).mark_bar(color='#C4895A').encode(
             x=alt.X('Date:T', title=''),
             y=alt.Y('sales_count:Q', title='Number of Sales'),
             tooltip=[
@@ -167,7 +184,7 @@ if not df.empty:
                     axis=alt.Axis(labelAngle=0)),
             y=alt.Y('Year:O', title='', sort='descending'),
             color=alt.Color('avg_price:Q', title='Avg Price ($)',
-                            scale=alt.Scale(scheme='tealblues'),
+                            scale=alt.Scale(scheme='oranges'),
                             legend=alt.Legend(format='$,.0f')),
             tooltip=[
                 alt.Tooltip('Year:O', title='Year'),
@@ -198,7 +215,7 @@ if not df.empty:
         year_avg = year_avg[year_avg['sales_count'] >= 3]
 
         if not year_avg.empty:
-            bar_year = alt.Chart(year_avg).mark_bar(color='#00bfa5').encode(
+            bar_year = alt.Chart(year_avg).mark_bar(color='#C4895A').encode(
                 x=alt.X('Year:O', title='Model Year', axis=alt.Axis(labelAngle=-45)),
                 y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
                         scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),

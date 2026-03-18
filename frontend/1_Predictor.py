@@ -10,6 +10,26 @@ API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPri
 
 st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", page_icon="🚗", layout="wide")
 
+st.markdown("""
+<style>
+[data-testid="stMetric"] {
+    background-color: #EDE8DF;
+    border: 1px solid #C4A882;
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+.stTabs [aria-selected="true"] {
+    color: #8B5E3C !important;
+    border-bottom-color: #8B5E3C !important;
+}
+hr { border-color: #C4A882 !important; }
+.streamlit-expanderHeader {
+    background-color: #EDE8DF;
+    border-radius: 8px;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --- DATA LOADING ---
 @st.cache_data
 def load_car_data():
@@ -352,7 +372,7 @@ with tab2:
     st.markdown("Think of this as the model's voting card — the longer the bar, the more that feature consistently swayed price estimates across thousands of auctions. It doesn't tell you which direction, just how much each factor matters overall.")
 
     if not df_shap.empty:
-        fig_shap = alt.Chart(df_shap).mark_bar(color='#00bfa5').encode(
+        fig_shap = alt.Chart(df_shap).mark_bar(color='#C4895A').encode(
             x=alt.X('mean_abs_shap:Q', title='Mean Absolute SHAP Value (log $)'),
             y=alt.Y('feature:N', sort='-x', title=None),
             tooltip=['feature', alt.Tooltip('mean_abs_shap:Q', format='.4f', title='Importance')]
@@ -400,7 +420,7 @@ with tab2:
         
         feature_data = df_pdp[df_pdp['Feature'] == selected_feature]
         
-        fig_pdp = alt.Chart(feature_data).mark_line(color='#00bfa5', point=True).encode(
+        fig_pdp = alt.Chart(feature_data).mark_line(color='#C4895A', point=True).encode(
             x=alt.X('Feature_Value:Q', title=selected_feature),
             y=alt.Y('Predicted_Price:Q', title='Estimated Price ($)', scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
             tooltip=[alt.Tooltip('Feature_Value:Q', title=selected_feature),
