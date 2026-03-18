@@ -25,53 +25,66 @@ if not df.empty:
         "Model Year Sweet Spot"
     ])
 
-    # --- TAB 0: MARKET OVERVIEW (original charts) ---
+    # --- TAB 0: MARKET OVERVIEW ---
     with tab0:
         st.subheader("Platform-Wide Market Overview")
 
-        col1, col2 = st.columns(2)
+        st.write("#### Average Sale Price Over Time")
+        st.caption("Monthly average sale price across all makes and models — shows the overall trajectory of the market and whether the platform's prices are trending up or down.")
 
-        with col1:
-            st.write("#### Average Sale Price Over Time")
-            st.caption("Monthly average sale price across all makes and models — shows the overall trajectory of the market and whether the platform's prices are trending up or down.")
+        price_over_time = df.groupby(['auction_year', 'auction_month'])['Sold_Price'].mean().reset_index()
+        price_over_time['Date'] = pd.to_datetime(
+            price_over_time['auction_year'].astype(str) + '-' + price_over_time['auction_month'].astype(str) + '-01'
+        )
+        price_over_time = price_over_time.sort_values('Date')
 
-            price_over_time = df.groupby(['auction_year', 'auction_month'])['Sold_Price'].mean().reset_index()
-            price_over_time['Date'] = pd.to_datetime(
-                price_over_time['auction_year'].astype(str) + '-' + price_over_time['auction_month'].astype(str) + '-01'
-            )
-            price_over_time = price_over_time.sort_values('Date')
+        line_overview = alt.Chart(price_over_time).mark_line(color='#00bfa5', point=True).encode(
+            x=alt.X('Date:T', title=''),
+            y=alt.Y('Sold_Price:Q', title='Average Sale Price ($)',
+                    scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+            tooltip=[
+                alt.Tooltip('Date:T', format='%b %Y', title='Month'),
+                alt.Tooltip('Sold_Price:Q', format='$,.0f', title='Avg Price')
+            ]
+        )
+        st.altair_chart(line_overview, use_container_width=True)
 
-            line_overview = alt.Chart(price_over_time).mark_line(color='#00bfa5', point=True).encode(
-                x=alt.X('Date:T', title=''),
-                y=alt.Y('Sold_Price:Q', title='Average Sale Price ($)',
-                        scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
-                tooltip=[
-                    alt.Tooltip('Date:T', format='%b %Y', title='Month'),
-                    alt.Tooltip('Sold_Price:Q', format='$,.0f', title='Avg Price')
-                ]
-            )
-            st.altair_chart(line_overview, use_container_width=True)
+        make_avg = df.groupby('Make')['Sold_Price'].agg(
+            avg_price='mean', sales_count='count'
+        ).reset_index()
+        make_avg_filtered = make_avg[make_avg['sales_count'] >= 50]
 
-        with col2:
-            st.write("#### Top 10 Makes by Average Sale Price")
-            st.caption("The ten makes with the highest average hammer price, filtered to brands with at least 50 sales — removes small-sample outliers so only well-represented brands appear.")
+        st.write("#### Top 10 Makes by Average Sale Price")
+        st.caption("The ten makes with the highest average hammer price, filtered to brands with at least 50 sales — removes small-sample outliers so only well-represented brands appear.")
 
-            make_avg = df.groupby('Make')['Sold_Price'].agg(
-                avg_price='mean', sales_count='count'
-            ).reset_index()
-            make_avg = make_avg[make_avg['sales_count'] >= 50].nlargest(10, 'avg_price')
+        top_makes = make_avg_filtered.nlargest(10, 'avg_price')
+        bar_top = alt.Chart(top_makes).mark_bar(color='#00bfa5').encode(
+            x=alt.X('Make:N', sort='-y', title='', axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
+            y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
+                    scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+            tooltip=[
+                alt.Tooltip('Make:N', title='Make'),
+                alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price'),
+                alt.Tooltip('sales_count:Q', title='Total Sales')
+            ]
+        )
+        st.altair_chart(bar_top, use_container_width=True)
 
-            bar_makes = alt.Chart(make_avg).mark_bar(color='#00bfa5').encode(
-                x=alt.X('Make:N', sort='-y', title='', axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
-                y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
-                        scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
-                tooltip=[
-                    alt.Tooltip('Make:N', title='Make'),
-                    alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price'),
-                    alt.Tooltip('sales_count:Q', title='Total Sales')
-                ]
-            )
-            st.altair_chart(bar_makes, use_container_width=True)
+        st.write("#### Bottom 10 Makes by Average Sale Price")
+        st.caption("The ten makes with the lowest average hammer price among well-represented brands — useful for spotting the more accessible end of the market.")
+
+        bottom_makes = make_avg_filtered.nsmallest(10, 'avg_price')
+        bar_bottom = alt.Chart(bottom_makes).mark_bar(color='#ff5252').encode(
+            x=alt.X('Make:N', sort='y', title='', axis=alt.Axis(labelAngle=-45, labelOverlap=False)),
+            y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
+                    scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+            tooltip=[
+                alt.Tooltip('Make:N', title='Make'),
+                alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price'),
+                alt.Tooltip('sales_count:Q', title='Total Sales')
+            ]
+        )
+        st.altair_chart(bar_bottom, use_container_width=True)
 
     # --- TAB 1: MAKE/MODEL PRICE OVER TIME ---
     with tab1:
@@ -135,31 +148,35 @@ if not df.empty:
         )
         st.altair_chart(bar, use_container_width=True)
 
-    # --- TAB 3: SEASONAL PRICE PATTERNS ---
+    # --- TAB 3: PRICE HEATMAP ---
     with tab3:
-        st.subheader("Seasonal Price Patterns")
-        st.caption("Average sale price by calendar month, collapsed across all years — shows whether buyers consistently pay more in certain seasons regardless of what year it is.")
+        st.subheader("Price Heatmap by Month & Year")
+        st.caption("Each cell shows the average sale price for that month and year — darker teal means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time.")
 
         month_labels = {
             1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
             7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
         }
 
-        seasonal = df.groupby('auction_month')['Sold_Price'].mean().reset_index()
-        seasonal.columns = ['month_num', 'avg_price']
-        seasonal['Month'] = seasonal['month_num'].map(month_labels)
+        heatmap_data = df.groupby(['auction_year', 'auction_month'])['Sold_Price'].mean().reset_index()
+        heatmap_data.columns = ['Year', 'month_num', 'avg_price']
+        heatmap_data['Month'] = heatmap_data['month_num'].map(month_labels)
 
-        bar_seasonal = alt.Chart(seasonal).mark_bar(color='#00bfa5').encode(
+        heatmap = alt.Chart(heatmap_data).mark_rect().encode(
             x=alt.X('Month:N', sort=list(month_labels.values()), title='',
                     axis=alt.Axis(labelAngle=0)),
-            y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
-                    scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+            y=alt.Y('Year:O', title='', sort='descending'),
+            color=alt.Color('avg_price:Q', title='Avg Price ($)',
+                            scale=alt.Scale(scheme='tealblues'),
+                            legend=alt.Legend(format='$,.0f')),
             tooltip=[
+                alt.Tooltip('Year:O', title='Year'),
                 alt.Tooltip('Month:N', title='Month'),
                 alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price')
             ]
-        )
-        st.altair_chart(bar_seasonal, use_container_width=True)
+        ).properties(height=300)
+
+        st.altair_chart(heatmap, use_container_width=True)
 
     # --- TAB 4: MODEL YEAR SWEET SPOT ---
     with tab4:
