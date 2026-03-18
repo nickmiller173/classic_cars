@@ -1,6 +1,13 @@
 data/*.csv
 data/frontend_data/*.csv
+!data/frontend_data/nlp_buzzwords.csv
+!data/frontend_data/residual_data.csv
+!data/frontend_data/pdp_data.csv
+!data/frontend_data/nlp_archetypes.csv
+!data/frontend_data/nlp_brands.csv
+!data/frontend_data/nlp_effort_scores.csv
 !data/frontend_data/historical_averages_lookup.csv
 !data/frontend_data/dropdown_options.csv
+!data/frontend_data/dashboard_data.csv
 *.pkl
 .ipynb_checkpoints/
