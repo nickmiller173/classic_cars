@@ -78,8 +78,8 @@ with tab1:
         
         # Upgraded to Altair to match the other tabs: handles angled labels and conditional colors
         bars = alt.Chart(impact_df).mark_bar().encode(
-            x=alt.X('Feature:N', sort='-y', title="", axis=alt.Axis(labelAngle=-45, labelLimit=300)),
-            y=alt.Y('Premium (%):Q', title="Price Premium vs Baseline (%)"),
+            x=alt.X('Feature:N', sort='-y', title="", axis=alt.Axis(labelAngle=-45, labelLimit=300, labelOverlap=False)),
+            y=alt.Y('Premium (%):Q', title="Price Premium vs Baseline (%)", scale=alt.Scale(zero=False)),
             # Dynamically color the bars: Teal for positive value, Red for penalty
             color=alt.condition(
                 alt.datum['Premium (%)'] > 0,
@@ -191,8 +191,8 @@ with tab3:
             st.caption("The average hammer price for each archetype — so you can see which type of listing tends to attract the most money at auction.")
             # Upgraded to Altair to sync colors with the pie chart and fix label clipping
             bar = alt.Chart(arch_summary).mark_bar().encode(
-                x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300)),
-                y=alt.Y("Average_Price:Q", title="Average Price ($)"),
+                x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300, labelOverlap=False)),
+                y=alt.Y("Average_Price:Q", title="Average Price ($)", scale=alt.Scale(zero=False)),
                 color=alt.Color("Archetype:N", legend=None), # Syncs color to the pie chart
                 tooltip=['Archetype', 'Average_Price']
             )

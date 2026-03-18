@@ -402,7 +402,7 @@ with tab2:
         
         fig_pdp = alt.Chart(feature_data).mark_line(color='#00bfa5', point=True).encode(
             x=alt.X('Feature_Value:Q', title=selected_feature),
-            y=alt.Y('Predicted_Price:Q', title='Estimated Price ($)', axis=alt.Axis(format='$,.0f')),
+            y=alt.Y('Predicted_Price:Q', title='Estimated Price ($)', scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
             tooltip=[alt.Tooltip('Feature_Value:Q', title=selected_feature),
                      alt.Tooltip('Predicted_Price:Q', format='$,.0f', title='Est. Price')]
         )

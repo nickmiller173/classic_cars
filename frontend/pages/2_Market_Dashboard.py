@@ -28,7 +28,7 @@ if not df.empty:
 
         line = alt.Chart(trend_df).mark_line(color='#00bfa5', point=True).encode(
             x=alt.X('Date:T', title=''),
-            y=alt.Y('Sold_Price:Q', title='Average Sale Price ($)', axis=alt.Axis(format='$,.0f')),
+            y=alt.Y('Sold_Price:Q', title='Average Sale Price ($)', scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
             tooltip=[alt.Tooltip('Date:T', format='%b %Y', title='Date'), alt.Tooltip('Sold_Price:Q', format='$,.0f', title='Avg Price')]
         )
         st.altair_chart(line, use_container_width=True)
@@ -50,8 +50,8 @@ if not df.empty:
         top_makes_df.columns = ['Make', 'Avg_Price']
 
         bar = alt.Chart(top_makes_df).mark_bar(color='#00bfa5').encode(
-            x=alt.X('Make:N', sort='-y', title='', axis=alt.Axis(labelAngle=-45, labelLimit=200)),
-            y=alt.Y('Avg_Price:Q', title='Average Sale Price ($)', axis=alt.Axis(format='$,.0f')),
+            x=alt.X('Make:N', sort='-y', title='', axis=alt.Axis(labelAngle=-45, labelLimit=200, labelOverlap=False)),
+            y=alt.Y('Avg_Price:Q', title='Average Sale Price ($)', scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
             tooltip=['Make', alt.Tooltip('Avg_Price:Q', format='$,.0f', title='Avg Price')]
         )
         st.altair_chart(bar, use_container_width=True)
