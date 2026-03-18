@@ -1,0 +1,21 @@
+feature,mean_abs_shap
+Model,0.2857276
+Mileage,0.16939357
+car_age,0.12732536
+Engine_Displacement_L,0.09936183
+Gears,0.050097946
+Transmission_Type_Automatic,0.041102804
+flaw_count,0.039910544
+text_component_1,0.035328742
+text_component_2,0.035127677
+text_component_8,0.03351071
+Make,0.03338448
+SP500_Close,0.030447226
+Drivetrain_4WD/AWD,0.028309142
+mileage_per_year,0.02592687
+text_component_7,0.024166344
+text_component_3,0.022238644
+flaw_severity_score,0.020658242
+text_component_5,0.017376045
+Drivetrain_Front-wheel drive,0.016989904
+2_keys_ind,0.01603209
