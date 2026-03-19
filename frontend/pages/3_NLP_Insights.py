@@ -88,7 +88,7 @@ with tab1:
         impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
         
         st.write("### Resale Value Impact")
-        st.caption("Each bar shows whether mentioning a feature in the listing tends to help or hurt the final sale price — teal means it adds value on average, red means it's typically associated with a discount.")
+        st.caption("Each bar shows the average price difference between listings that mention a feature vs. those that don't — not that the feature itself causes a higher or lower price. A car described as a 'project car' sells for less because it's a project car, not because of the words used. Treat this as a signal of what types of cars use each phrase, not a recipe for writing listings.")
         
         import altair as alt
         
@@ -138,7 +138,7 @@ with tab2:
         
         st.divider()
         st.write("### Brand Exclusivity vs. Value Premium")
-        st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it tends to command; the further right, the more commonly it shows up in listings.")
+        st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it tends to command; the further right, the more commonly it shows up. Note: the premium reflects the average price of cars that happen to have that brand — expensive brands may simply show up on expensive cars regardless of whether they add value.")
         
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
         df_exploded = df_exploded[df_exploded['Extracted_Brands_List'] != '']
@@ -258,7 +258,7 @@ with tab4:
             
             return scatter + trendline
 
-        st.caption("Each dot is a real listing — the trendline shows whether writing more words in that section tends to push prices higher or lower. Charts are zoomed to the 95th percentile to hide outliers and keep the trend readable.")
+        st.caption("Each dot is a real listing — the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail. Charts are zoomed to the 95th percentile to hide outliers.")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -272,9 +272,9 @@ with tab4:
 # --- TAB 5: AUCTION BUZZWORDS ---
 with tab5:
     st.subheader("The 'Auction Buzzword' Impact Analyzer")
-    st.markdown("Which specific words or phrases extracted from the text associate with the highest premium or the steepest discount?")
-    
-    st.caption("These are the specific words and phrases that, when they appear in a listing, most consistently push prices up (teal) or pull them down (red) based on thousands of historical auction results.")
+    st.markdown("Which specific words or phrases extracted from the text are most associated with high or low sale prices?")
+
+    st.caption("These values show the average price difference between listings containing each word and those that don't — they are correlations, not causes. A word like 'performance' appearing with a large negative value doesn't mean writing it hurts your sale; it more likely means cheaper sporty cars use that word more often. Use this to understand what language tends to appear in different price brackets, not as writing advice.")
 
     if not df_buzzwords.empty:
         # Split into top 15 premium and top 15 discount words
@@ -284,8 +284,9 @@ with tab5:
         combined_buzzwords = pd.concat([top_premium, top_discount])
         
         buzz_bar = alt.Chart(combined_buzzwords).mark_bar().encode(
-            x=alt.X('Impact_Value:Q', title="Dollar Impact on Final Price ($)"),
-            y=alt.Y('Word:N', sort='-x', title="Extracted Keyword/Phrase"),
+            x=alt.X('Impact_Value:Q', title="Avg Price Difference vs. Listings Without This Word ($)"),
+            y=alt.Y('Word:N', sort='-x', title="",
+                    axis=alt.Axis(labelLimit=300, labelOverlap=False)),
             color=alt.condition(
                 alt.datum.Impact_Value > 0,
                 alt.value('#C4895A'),  # Teal for Premium
