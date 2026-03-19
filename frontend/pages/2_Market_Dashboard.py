@@ -108,15 +108,25 @@ if not df.empty:
         st.subheader("Price Trend by Make & Model")
         st.caption("Select a specific make and model to see how average sale prices have moved over time — great for spotting cars that are appreciating or cooling off.")
 
+        # Pre-compute valid combos: only show make/model pairs with at least 3 months having ≥2 sales
+        month_counts = df.groupby(['Make', 'Model', 'auction_year', 'auction_month']).size().reset_index(name='n')
+        valid_trend_combos = (
+            month_counts[month_counts['n'] >= 2]
+            .groupby(['Make', 'Model'])
+            .size()
+            .reset_index(name='qualifying_months')
+        )
+        valid_trend_combos = valid_trend_combos[valid_trend_combos['qualifying_months'] >= 3]
+
         col1, col2 = st.columns(2)
         with col1:
-            makes = sorted(df['Make'].dropna().unique())
-            default_make_idx = makes.index('Tesla') if 'Tesla' in makes else 0
-            selected_make = st.selectbox("Make", makes, index=default_make_idx)
+            valid_makes_t1 = sorted(valid_trend_combos['Make'].unique())
+            default_make_idx = valid_makes_t1.index('Tesla') if 'Tesla' in valid_makes_t1 else 0
+            selected_make = st.selectbox("Make", valid_makes_t1, index=default_make_idx)
         with col2:
-            models = sorted(df[df['Make'] == selected_make]['Model'].dropna().unique())
-            default_model_idx = models.index('Cybertruck') if 'Cybertruck' in models else 0
-            selected_model = st.selectbox("Model", models, index=default_model_idx)
+            valid_models_t1 = sorted(valid_trend_combos[valid_trend_combos['Make'] == selected_make]['Model'].unique())
+            default_model_idx = valid_models_t1.index('Cybertruck') if 'Cybertruck' in valid_models_t1 else 0
+            selected_model = st.selectbox("Model", valid_models_t1, index=default_model_idx)
 
         filtered = df[(df['Make'] == selected_make) & (df['Model'] == selected_model)]
         trend = filtered.groupby(['auction_year', 'auction_month'])['Sold_Price'].agg(
@@ -200,12 +210,23 @@ if not df.empty:
         st.subheader("Model Year Sweet Spot")
         st.caption("Pick a make and model to see which production years command the highest average prices — useful for pinpointing the exact vintage buyers are willing to pay a premium for.")
 
+        # Pre-compute valid combos: only show make/model pairs where at least 2 model years have ≥3 sales
+        year_counts = df.groupby(['Make', 'Model', 'Year']).size().reset_index(name='n')
+        valid_combos = (
+            year_counts[year_counts['n'] >= 3]
+            .groupby(['Make', 'Model'])
+            .size()
+            .reset_index(name='qualifying_years')
+        )
+        valid_combos = valid_combos[valid_combos['qualifying_years'] >= 2]
+
         col1, col2 = st.columns(2)
         with col1:
-            selected_make_t4 = st.selectbox("Make", sorted(df['Make'].dropna().unique()), key='tab4_make')
+            valid_makes = sorted(valid_combos['Make'].unique())
+            selected_make_t4 = st.selectbox("Make", valid_makes, key='tab4_make')
         with col2:
-            models_t4 = sorted(df[df['Make'] == selected_make_t4]['Model'].dropna().unique())
-            selected_model_t4 = st.selectbox("Model", models_t4, key='tab4_model')
+            valid_models_t4 = sorted(valid_combos[valid_combos['Make'] == selected_make_t4]['Model'].unique())
+            selected_model_t4 = st.selectbox("Model", valid_models_t4, key='tab4_model')
 
         make_df = df[(df['Make'] == selected_make_t4) & (df['Model'] == selected_model_t4)]
         year_avg = make_df.groupby('Year')['Sold_Price'].agg(
