@@ -3,6 +3,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from datetime import datetime
+import yfinance as yf
 from utils import engineer_sharp_features
 
 # 1. Load Artifacts
@@ -50,8 +51,13 @@ def lambda_handler(event, context):
     # 4. Sharp features and Boolean flags from utils.py
     input_df = engineer_sharp_features(input_df)
     
-    # S&P 500 Placeholder & Auction Month proxy
-    input_df['SP500_Close'] = 5000.0 
+    # S&P 500 (live fetch with fallback) & Auction Month proxy
+    try:
+        sp500_hist = yf.Ticker("^GSPC").history(period="1d")
+        sp500_close = float(sp500_hist['Close'].iloc[-1]) if not sp500_hist.empty else 5000.0
+    except Exception:
+        sp500_close = 5000.0
+    input_df['SP500_Close'] = sp500_close
     input_df['auction_month'] = datetime.now().month
     input_df['auction_year'] = datetime.now().year
 

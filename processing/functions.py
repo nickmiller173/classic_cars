@@ -340,7 +340,7 @@ def engineer_sharp_features(df):
 
     # 4. Recent Maintenance (Capex)
     df['recent_major_service'] = df['Recent Service History'].apply(
-        lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced|)\b', x) else 0
+        lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced)\b', x) else 0
     )
 
     # 5. Categorical extraction

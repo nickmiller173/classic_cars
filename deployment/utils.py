@@ -60,7 +60,7 @@ def engineer_sharp_features(df):
 
     # 2. Boolean Flags (The Multipliers)
     df['2_keys_ind'] = df['Other Items Included in Sale'].apply(
-    lambda x: 1 if re.search(r'\b(2 keys|3 keys)\b', x) else 0
+    lambda x: 1 if re.search(r'\b(2 keys|3 keys|both original keys|both keys)\b', x) else 0
     )
 
     df['owners_manual_ind'] = df['Other Items Included in Sale'].apply(
@@ -104,7 +104,7 @@ def engineer_sharp_features(df):
 
     # 4. Recent Maintenance (Capex)
     df['recent_major_service'] = df['Recent Service History'].apply(
-        lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced|)\b', x) else 0
+        lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced)\b', x) else 0
     )
 
     # 5. Categorical extraction
