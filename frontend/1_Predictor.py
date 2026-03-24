@@ -145,7 +145,7 @@ with tab1:
 
     with col2:
         # Static UI Elements (Not filtered by specs)
-        exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'])
+        exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'], index=8)
         interior_color = st.selectbox("Interior Color", ['Black', 'Beige', 'Gray', 'Brown', 'Red', 'White', 'Blue', 'Other'])
         title_status = st.selectbox("Title Status", ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"])
         seller_type = st.selectbox("Seller Type", ["Private Party", "Dealer", "Other"])
@@ -153,7 +153,7 @@ with tab1:
         # Dynamic Elements
         drivetrains = sorted(spec_df['Drivetrain'].dropna().unique().tolist()) if not spec_df.empty and 'Drivetrain' in spec_df.columns else []
         if not drivetrains: drivetrains = ["Rear-wheel drive", "4WD/AWD", "Front-wheel drive"]
-        drivetrain = st.selectbox("Drivetrain", drivetrains)
+        drivetrain = st.selectbox("Drivetrain", drivetrains, index=drivetrains.index("Rear-wheel drive") if "Rear-wheel drive" in drivetrains else 0)
 
         # 2. CASCADE: Filter by Drivetrain
         if not spec_df.empty and 'Drivetrain' in spec_df.columns:
@@ -162,7 +162,7 @@ with tab1:
     with col3:
         body_styles = sorted(spec_df['Body Style'].dropna().unique().tolist()) if not spec_df.empty and 'Body Style' in spec_df.columns else []
         if not body_styles: body_styles = ["Convertible", "Coupe", "Hatchback", "SUV/Crossover", "Sedan", "Truck", "Van/Minivan", "Wagon"]
-        body_style = st.selectbox("Body Style", body_styles)
+        body_style = st.selectbox("Body Style", body_styles, index=body_styles.index("Coupe") if "Coupe" in body_styles else 0)
         
         # 3. CASCADE: Filter by Body Style
         if not spec_df.empty and 'Body Style' in spec_df.columns:
@@ -170,7 +170,7 @@ with tab1:
         
         transmissions = sorted(spec_df['Transmission_Type'].dropna().unique().tolist()) if not spec_df.empty and 'Transmission_Type' in spec_df.columns else []
         if not transmissions: transmissions = ["Automatic", "Manual", "Other"]
-        transmission = st.selectbox("Transmission", transmissions)
+        transmission = st.selectbox("Transmission", transmissions, index=transmissions.index("Manual") if "Manual" in transmissions else 0)
 
         # 4. CASCADE: Filter by Transmission
         if not spec_df.empty and 'Transmission_Type' in spec_df.columns:
