@@ -281,7 +281,6 @@ with tab1:
                     target_col = 'Sold_Price' 
                     
                     fallback_filters = [
-                        {"name": "Make, Model, Year, Trans, Color", "conditions": [('Make', make), ('Model', model), ('Year', year), ('Transmission_Type', transmission), ('Exterior Color', exterior_color)]},
                         {"name": "Make, Model, Year, Trans", "conditions": [('Make', make), ('Model', model), ('Year', year), ('Transmission_Type', transmission)]},
                         {"name": "Make, Model, Year", "conditions": [('Make', make), ('Model', model), ('Year', year)]},
                         {"name": "Make & Model", "conditions": [('Make', make), ('Model', model)]},
