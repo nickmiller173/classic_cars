@@ -5,6 +5,38 @@ import numpy as np
 
 # --- NEW FEATURE ENGINEERING LOGIC ---
 
+HIGH_VALUE_TRIM_PATTERN = r'\b(gt2|gt3|gt2rs|gt3rs|turbo-s|zr1|z06|hellcat|gt500|gt350|shelby|trd-pro|raptor|competition|black-series|gts-4)\b'
+
+def extract_trim_slug(url, make, model=''):
+    """
+    Extracts the trim from a Cars & Bids auction URL by stripping year, make, and model tokens.
+    E.g. '.../2006-porsche-996-911-gt3' -> 'gt3'
+    Returns 'unknown' when no URL is available (target encoder falls back to mean).
+    """
+    if pd.isna(url) or not isinstance(url, str) or not url.strip():
+        return 'unknown'
+
+    slug = url.rstrip('/').split('/')[-1].lower()
+    slug = re.sub(r'^\d{4}-', '', slug)  # strip year prefix
+
+    make_tokens = set(re.sub(r'[^a-z0-9]+', '-', str(make).lower()).strip('-').split('-'))
+    model_tokens = set(re.sub(r'[^a-z0-9]+', '-', str(model).lower()).strip('-').split('-'))
+    stop_tokens = make_tokens | model_tokens
+
+    filtered = [t for t in slug.split('-') if t not in stop_tokens]
+
+    result = '-'.join(filtered)
+    return result if result else 'base'
+
+
+def extract_performance_trim_flag(url):
+    """Returns 1 if the URL slug contains a known high-value performance trim."""
+    if pd.isna(url) or not isinstance(url, str):
+        return 0
+    slug = url.rstrip('/').split('/')[-1].lower()
+    return 1 if re.search(HIGH_VALUE_TRIM_PATTERN, slug) else 0
+
+
 def categorize_mods(text):
     """Categorizes modification severity."""
     if pd.isna(text): return "stock"

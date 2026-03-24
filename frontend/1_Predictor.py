@@ -140,6 +140,13 @@ with tab1:
         if not spec_df.empty and 'Year' in spec_df.columns:
             spec_df = spec_df[spec_df['Year'] == year]
 
+        trims = sorted(spec_df['trim_slug'].dropna().unique().tolist()) if not spec_df.empty and 'trim_slug' in spec_df.columns else []
+        if not trims:
+            trims = ['unknown']
+        if 'unknown' not in trims:
+            trims = ['unknown'] + trims
+        trim_slug = st.selectbox("Trim", trims, format_func=lambda x: 'Unknown / Base' if x == 'unknown' else x.replace('-', ' ').title())
+
         mileage = st.number_input("Mileage", min_value=0, value=50000, step=500)
         state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, value="AZ")
 
@@ -248,7 +255,8 @@ with tab1:
             "Recent Service History": service_history,
             "Ownership History": ownership_history,
             "Other Items Included in Sale": included_items,
-            "Seller Notes": seller_notes
+            "Seller Notes": seller_notes,
+            "trim_slug": trim_slug
         }
 
         with st.spinner("Analyzing data and communicating with AWS Lambda..."):
