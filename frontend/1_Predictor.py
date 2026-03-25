@@ -112,6 +112,11 @@ _defaults = {
     'pred_engine_cyl': '',
     'pred_displacement': 3.0,
     'pred_gears': 6,
+    # Static selectboxes
+    'pred_exterior_color': 'Beige',
+    'pred_interior_color': 'Black',
+    'pred_title_status': 'Clean',
+    'pred_seller_type': 'Private Party',
     # Text areas — plain session state keys (not widget keys) so Streamlit never clears them
     'pred_highlights': '',
     'pred_equipment': '',
@@ -191,10 +196,25 @@ with tab1:
         state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, key='pred_state')
 
     with col2:
-        exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'], index=8, key='pred_exterior_color')
-        interior_color = st.selectbox("Interior Color", ['Black', 'Beige', 'Gray', 'Brown', 'Red', 'White', 'Blue', 'Other'], key='pred_interior_color')
-        title_status = st.selectbox("Title Status", ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"], key='pred_title_status')
-        seller_type = st.selectbox("Seller Type", ["Private Party", "Dealer", "Other"], key='pred_seller_type')
+        ext_colors = ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other']
+        saved_ext = st.session_state['pred_exterior_color']
+        exterior_color = st.selectbox("Exterior Color", ext_colors, index=ext_colors.index(saved_ext) if saved_ext in ext_colors else 8)
+        st.session_state['pred_exterior_color'] = exterior_color
+
+        int_colors = ['Black', 'Beige', 'Gray', 'Brown', 'Red', 'White', 'Blue', 'Other']
+        saved_int = st.session_state['pred_interior_color']
+        interior_color = st.selectbox("Interior Color", int_colors, index=int_colors.index(saved_int) if saved_int in int_colors else 0)
+        st.session_state['pred_interior_color'] = interior_color
+
+        title_opts = ["Clean", "Rebuilt/Salvage", "Mileage Issue", "Buyback", "Alternate Doc", "Other", "Unknown"]
+        saved_title = st.session_state['pred_title_status']
+        title_status = st.selectbox("Title Status", title_opts, index=title_opts.index(saved_title) if saved_title in title_opts else 0)
+        st.session_state['pred_title_status'] = title_status
+
+        seller_opts = ["Private Party", "Dealer", "Other"]
+        saved_seller = st.session_state['pred_seller_type']
+        seller_type = st.selectbox("Seller Type", seller_opts, index=seller_opts.index(saved_seller) if saved_seller in seller_opts else 0)
+        st.session_state['pred_seller_type'] = seller_type
 
         drivetrains = sorted(spec_df['Drivetrain'].dropna().unique().tolist()) if not spec_df.empty and 'Drivetrain' in spec_df.columns else []
         if not drivetrains: drivetrains = ["Rear-wheel drive", "4WD/AWD", "Front-wheel drive"]
