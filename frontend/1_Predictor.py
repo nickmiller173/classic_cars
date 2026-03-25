@@ -8,7 +8,7 @@ import os
 # --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
 
-st.set_page_config(page_title="carsandbids.com: Classic Car Price Predictor", page_icon="🚗", layout="wide")
+st.set_page_config(page_title="carsandbids.com: Car Price Predictor", page_icon="🚗", layout="wide")
 
 st.markdown("""
 <style>
@@ -132,8 +132,8 @@ for k, v in _defaults.items():
         st.session_state[k] = v
 
 # --- UI HEADER ---
-st.title("carsandbids.com 🚗 Classic Car Price Estimator")
-st.markdown("Instantly estimate the auction value of a classic car based on its specs and historical condition reports.")
+st.title("carsandbids.com 🚗 Car Price Predictor")
+st.markdown("Using machine learning, instantly estimate the auction value of a classic car based on its specifications and historical condition reports")
 st.divider()
 
 # --- TABS SETUP ---
