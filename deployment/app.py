@@ -29,6 +29,8 @@ def lambda_handler(event, context):
     model_year = float(input_df['Year'].iloc[0])
     
     input_df['car_age'] = max(current_year - model_year, 0)
+    input_df['model_year'] = model_year
+    input_df['make_model_year'] = str(body.get('Make', '')) + '_' + str(body.get('Model', '')) + '_' + str(int(model_year))
     input_df['mileage_per_year'] = float(input_df['Mileage'].iloc[0]) / (input_df['car_age'] + 0.5)
     
     input_df['flaw_count'] = input_df['Known Flaws'].apply(

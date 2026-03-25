@@ -501,7 +501,7 @@ def engineer_date_features(df, is_inference=False):
     # Sanity Check: If age is negative (e.g. 2024 model sold in 2023), clamp to 0
     df['car_age'] = df['car_age'].apply(lambda x: max(x, 0))
         
-    # Cleanup
-    df = df.drop(columns=['date_obj', 'model_year']) # We drop model_year because 'car_age' is the better predictor
+    # Cleanup — keep model_year as a feature (year-specific desirability for classics)
+    df = df.drop(columns=['date_obj'])
     
     return df
