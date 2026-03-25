@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 import yfinance as yf
-from utils import engineer_sharp_features, extract_trim_slug, extract_performance_trim_flag
+from utils import engineer_sharp_features, extract_trim_slug, extract_performance_trim_flag, assign_trim_tier
 
 # 1. Load Artifacts
 with open('model_artifacts_002.pkl', 'rb') as f:
@@ -51,9 +51,10 @@ def lambda_handler(event, context):
     # 4. Sharp features and Boolean flags from utils.py
     input_df = engineer_sharp_features(input_df)
 
-    # Trim features — sent directly from the frontend dropdown
-    input_df['trim_slug'] = body.get('trim_slug', 'unknown')
-    input_df['is_performance_trim'] = extract_performance_trim_flag(body.get('trim_slug', ''))
+    # Trim features — convert frontend trim_slug selection to tier for model
+    trim_slug = body.get('trim_slug', 'unknown')
+    input_df['trim_tier'] = assign_trim_tier(trim_slug)
+    input_df['is_performance_trim'] = extract_performance_trim_flag(trim_slug)
     
     # S&P 500 (live fetch with fallback) & Auction Month proxy
     try:
@@ -78,8 +79,8 @@ def lambda_handler(event, context):
                 input_df[col] = -1
 
     # 6. Create One-Hot Encodings
-    one_hot_cols = ['Title Status', 'Seller Type', 'Drivetrain', 'Transmission_Type', 
-                    'Body Style', 'Engine_Cylinders', 'mod_status', 'auction_month']
+    one_hot_cols = ['Title Status', 'Seller Type', 'Drivetrain', 'Transmission_Type',
+                    'Body Style', 'Engine_Cylinders', 'mod_status', 'auction_month', 'trim_tier']
     
     input_df = pd.get_dummies(input_df, columns=[c for c in one_hot_cols if c in input_df.columns])
     

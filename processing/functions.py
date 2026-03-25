@@ -350,6 +350,49 @@ def engineer_sharp_features(df):
 
 HIGH_VALUE_TRIM_PATTERN = r'\b(gt2|gt3|gt2rs|gt3rs|turbo-s|zr1|z06|hellcat|gt500|gt350|shelby|trd-pro|raptor|competition|black-series|gts-4)\b'
 
+# Token sets for assign_trim_tier — checked in priority order (first match wins)
+_TRIM_ULTRA  = {'gt3', 'gt2', 'sto', 'evo', 'spider', 'g63', 'gtb'}
+_TRIM_HIGH   = {'turbo', 'gts', 'amg', 'z06', 'gt4', 'targa', 'spyder',
+                'cabriolet', 'cs', 'csl', 'demon', 'cyberbeast', '4s',
+                'carrera', 'p530', 'rs', 'v10', 'e63', 'g550', 'lwb', 'v12', 'hybrid'}
+_TRIM_SPORT  = {'shelby', 'gt500', 'gt350', 'srt', 'hellcat', 'competition',
+                'blackwing', 'trx', 'plaid', 'lightning', 'stingray', 'redeye',
+                'scat', 'avant', 'raptor', 'trd', 'foundation', 'launch',
+                'heritage', 'skyline', 'quadrifoglio', 'type', 'performance', 'gt', 'v8'}
+_TRIM_ECON   = {'club', 'standard', 'rwd', 'awd', 'plus', 'moke', 'sl', 'rf', 'n', 'dual', 'mx'}
+
+
+def assign_trim_tier(trim_slug):
+    """
+    Maps a trim_slug to one of 6 price tiers based on token matching.
+    Priority order ensures 'gt3-rs' → ultra_premium even though 'rs' alone is high_performance.
+
+    Tiers (derived from token-level price analysis on ~3,000 auctions):
+        ultra_premium  : avg >$200K  (gt3, sto, g63, evo, spider, gtb)
+        high_performance: avg $100-200K (turbo, gts, amg, z06, carrera, rs, 4s, ...)
+        sport_premium  : avg $70-100K  (shelby, gt500, srt, competition, plaid, ...)
+        base           : catch-all for unrecognized / standard production trims
+        economy        : avg <$40K    (club, awd, rwd, standard, mx, ...)
+        unknown        : no URL available
+    """
+    if pd.isna(trim_slug) or trim_slug == 'unknown':
+        return 'unknown'
+    if trim_slug == 'base':
+        return 'base'
+
+    tokens = set(trim_slug.split('-'))
+
+    if tokens & _TRIM_ULTRA:
+        return 'ultra_premium'
+    if tokens & _TRIM_HIGH:
+        return 'high_performance'
+    if tokens & _TRIM_SPORT:
+        return 'sport_premium'
+    if tokens & _TRIM_ECON:
+        return 'economy'
+
+    return 'base'
+
 def extract_trim_slug(url, make, model=''):
     """
     Extracts the trim from a Cars & Bids auction URL by stripping year, make, and model tokens.

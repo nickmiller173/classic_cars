@@ -7,6 +7,33 @@ import numpy as np
 
 HIGH_VALUE_TRIM_PATTERN = r'\b(gt2|gt3|gt2rs|gt3rs|turbo-s|zr1|z06|hellcat|gt500|gt350|shelby|trd-pro|raptor|competition|black-series|gts-4)\b'
 
+_TRIM_ULTRA  = {'gt3', 'gt2', 'sto', 'evo', 'spider', 'g63', 'gtb'}
+_TRIM_HIGH   = {'turbo', 'gts', 'amg', 'z06', 'gt4', 'targa', 'spyder',
+                'cabriolet', 'cs', 'csl', 'demon', 'cyberbeast', '4s',
+                'carrera', 'p530', 'rs', 'v10', 'e63', 'g550', 'lwb', 'v12', 'hybrid'}
+_TRIM_SPORT  = {'shelby', 'gt500', 'gt350', 'srt', 'hellcat', 'competition',
+                'blackwing', 'trx', 'plaid', 'lightning', 'stingray', 'redeye',
+                'scat', 'avant', 'raptor', 'trd', 'foundation', 'launch',
+                'heritage', 'skyline', 'quadrifoglio', 'type', 'performance', 'gt', 'v8'}
+_TRIM_ECON   = {'club', 'standard', 'rwd', 'awd', 'plus', 'moke', 'sl', 'rf', 'n', 'dual', 'mx'}
+
+
+def assign_trim_tier(trim_slug):
+    if pd.isna(trim_slug) or trim_slug == 'unknown':
+        return 'unknown'
+    if trim_slug == 'base':
+        return 'base'
+    tokens = set(trim_slug.split('-'))
+    if tokens & _TRIM_ULTRA:
+        return 'ultra_premium'
+    if tokens & _TRIM_HIGH:
+        return 'high_performance'
+    if tokens & _TRIM_SPORT:
+        return 'sport_premium'
+    if tokens & _TRIM_ECON:
+        return 'economy'
+    return 'base'
+
 def extract_trim_slug(url, make, model=''):
     """
     Extracts the trim from a Cars & Bids auction URL by stripping year, make, and model tokens.
