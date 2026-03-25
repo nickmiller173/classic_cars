@@ -31,7 +31,9 @@ def lambda_handler(event, context):
     input_df['car_age'] = max(current_year - model_year, 0)
     input_df['model_year'] = model_year
     input_df['make_model_year'] = str(body.get('Make', '')) + '_' + str(body.get('Model', '')) + '_' + str(int(model_year))
-    input_df['mileage_per_year'] = float(input_df['Mileage'].iloc[0]) / (input_df['car_age'] + 0.5)
+    raw_mileage = float(input_df['Mileage'].iloc[0])
+    input_df['mileage_per_year'] = raw_mileage / (input_df['car_age'] + 0.5)
+    input_df['Mileage'] = np.log1p(raw_mileage)
     
     input_df['flaw_count'] = input_df['Known Flaws'].apply(
         lambda x: len(str(x).split(',')) if pd.notna(x) and str(x).strip() != '' else 0
@@ -87,11 +89,11 @@ def lambda_handler(event, context):
     input_df = pd.get_dummies(input_df, columns=[c for c in one_hot_cols if c in input_df.columns])
     
     # --- 7. Apply Text Embeddings ---
-    # Transform the text blob into sparse TF-IDF, then reduce to dense 10 SVD components
+    # Transform the text blob into sparse TF-IDF, then reduce to dense 20 SVD components
     tfidf_matrix = tfidf_vectorizer.transform(text_blob)
     text_embeddings = svd_model.transform(tfidf_matrix)
-    
-    for i in range(10):
+
+    for i in range(20):
         input_df[f'text_component_{i}'] = text_embeddings[:, i]
         
     # 8. Align to the exact columns the XGBoost Pipeline expects
