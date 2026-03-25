@@ -388,7 +388,7 @@ with tab1:
         st.markdown(f"""
         <div style="display:flex; gap:16px; align-items:stretch;">
             <div style="flex:2; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:28px 32px; display:flex; flex-direction:column; justify-content:center;">
-                <p style="font-size:0.875rem; color:#666; font-weight:500; margin:0 0 8px 0;">Estimated Auction Value (AI)</p>
+                <p style="font-size:0.875rem; color:#666; font-weight:500; margin:0 0 8px 0;">Predicted Price</p>
                 <p style="font-size:3rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.1;">${price:,.0f}</p>
             </div>
             <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
