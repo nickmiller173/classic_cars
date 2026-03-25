@@ -70,6 +70,21 @@ def lambda_handler(event, context):
     input_df['auction_month'] = datetime.now().month
     input_df['auction_year'] = datetime.now().year
 
+    # --- Interaction Features ---
+    mileage_bins = [0, 20000, 50000, 100000, 150000, float('inf')]
+    mileage_labels = ['0-20k', '20-50k', '50-100k', '100-150k', '150k+']
+    mileage_bucket = pd.cut(pd.Series([raw_mileage]), bins=mileage_bins, labels=mileage_labels).iloc[0]
+    input_df['make_model_mileage_bucket'] = (str(body.get('Make', '')) + '_' +
+                                              str(body.get('Model', '')) + '_' + str(mileage_bucket))
+    input_df['make_model_trim'] = (str(body.get('Make', '')) + '_' + str(body.get('Model', '')) + '_' +
+                                   str(int(model_year)) + '_' + str(input_df['trim_tier'].iloc[0]))
+    input_df['seller_x_title'] = str(body.get('Seller Type', '')) + '_' + str(body.get('Title Status', ''))
+    input_df['car_age_x_mileage'] = float(input_df['car_age'].iloc[0]) * raw_mileage
+    input_df['model_year_x_mileage_per_year'] = model_year * float(input_df['mileage_per_year'].iloc[0])
+    input_df['sp500_x_auction_year'] = sp500_close * datetime.now().year
+    input_df['dry_climate_x_car_age'] = float(input_df['is_dry_climate_car'].iloc[0]) * float(input_df['car_age'].iloc[0])
+    input_df['flaw_severity_x_model_year'] = float(input_df['flaw_severity_score'].iloc[0]) * model_year
+
     # 5. Apply Label Encoders safely to Colors
     for col in ['Exterior Color', 'Interior Color']:
         le = label_encoders.get(col)
