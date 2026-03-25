@@ -360,30 +360,28 @@ with tab1:
                 if price > 0:
                     st.success("Analysis Complete!")
 
-                    metric_col1, metric_col2 = st.columns([2, 1])
-
-                    with metric_col1:
-                        st.markdown(f"""
-                        <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:28px 32px;">
+                    avg_val = f"${historical_avg:,.0f}" if historical_avg is not None else "N/A"
+                    count_val = f"{historical_count} cars" if historical_count > 0 else "0 cars"
+                    help_tip = f"Matched on: {match_level}" if historical_avg is not None else "No matching historical data found."
+                    
+                    st.markdown(f"""
+                    <div style="display:flex; gap:16px; align-items:stretch;">
+                        <div style="flex:2; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:28px 32px; display:flex; flex-direction:column; justify-content:center;">
                             <p style="font-size:0.875rem; color:#666; font-weight:500; margin:0 0 8px 0;">Predicted Price</p>
                             <p style="font-size:3rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.1;">${price:,.0f}</p>
                         </div>
-                        """, unsafe_allow_html=True)
-
-                    with metric_col2:
-                        avg_val = f"${historical_avg:,.0f}" if historical_avg is not None else "N/A"
-                        count_val = f"{historical_count} cars" if historical_count > 0 else "0 cars"
-                        help_tip = f"Matched on: {match_level}" if historical_avg is not None else "No matching historical data found."
-                        st.markdown(f"""
-                        <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; margin-bottom:10px;" title="{help_tip}">
-                            <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Average</p>
-                            <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{avg_val}</p>
+                        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+                            <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;" title="{help_tip}">
+                                <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Average</p>
+                                <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{avg_val}</p>
+                            </div>
+                            <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;">
+                                <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Sample Size</p>
+                                <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{count_val}</p>
+                            </div>
                         </div>
-                        <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px;">
-                            <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Sample Size</p>
-                            <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{count_val}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
+                    </div>
+                    """, unsafe_allow_html=True)
 
                     if historical_avg is not None:
                         filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
@@ -405,7 +403,6 @@ with tab1:
                             )
                         else:
                             st.dataframe(matching_cars_df, use_container_width=True, hide_index=True)
-
                     else:
                         st.info(f"**Historical average unable to be calculated**")
 
