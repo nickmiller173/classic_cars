@@ -105,6 +105,7 @@ _defaults = {
     'pred_year': 2002,
     'pred_trim': 'unknown',
     'pred_mileage': 50000,
+    'pred_state': 'AZ',
     'pred_drivetrain': 'Rear-wheel drive',
     'pred_body_style': 'Coupe',
     'pred_transmission': 'Manual',
@@ -177,8 +178,8 @@ with tab1:
         trim_slug = st.selectbox("Trim", trims, index=trim_idx, format_func=lambda x: 'Unknown / Base' if x == 'unknown' else x.replace('-', ' ').title())
         st.session_state['pred_trim'] = trim_slug
 
-        mileage = st.number_input("Mileage", min_value=0, value=st.session_state['pred_mileage'], step=500, key='pred_mileage')
-        state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, key='pred_state', value=st.session_state.get('pred_state', 'AZ'))
+        mileage = st.number_input("Mileage", min_value=0, step=500, key='pred_mileage')
+        state = st.text_input("State Registered (e.g. AZ, CA)", max_chars=2, key='pred_state')
 
     with col2:
         exterior_color = st.selectbox("Exterior Color", ['Black', 'White', 'Gray', 'Silver', 'Red', 'Blue', 'Green', 'Brown', 'Beige', 'Yellow', 'Orange', 'Purple', 'Other'], index=8, key='pred_exterior_color')
@@ -313,7 +314,6 @@ with tab1:
 
                 if response.status_code == 200:
                     result = response.json()
-                    st.session_state['last_prediction'] = result
                     if 'estimated_price' in result:
                         price = result['estimated_price']
                     elif 'body' in result:
@@ -356,58 +356,78 @@ with tab1:
                             matching_cars_df = temp_df
                             break
 
-                # --- 3. Display Results ---
+                # Store results in session state so they persist across tab switches
                 if price > 0:
-                    st.success("Analysis Complete!")
-
-                    avg_val = f"${historical_avg:,.0f}" if historical_avg is not None else "N/A"
-                    count_val = f"{historical_count} cars" if historical_count > 0 else "0 cars"
-                    help_tip = f"Matched on: {match_level}" if historical_avg is not None else "No matching historical data found."
-                    
-                    st.markdown(f"""
-                    <div style="display:flex; gap:16px; align-items:stretch;">
-                        <div style="flex:2; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:28px 32px; display:flex; flex-direction:column; justify-content:center;">
-                            <p style="font-size:0.875rem; color:#666; font-weight:500; margin:0 0 8px 0;">Predicted Price</p>
-                            <p style="font-size:3rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.1;">${price:,.0f}</p>
-                        </div>
-                        <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
-                            <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;" title="{help_tip}">
-                                <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Average</p>
-                                <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{avg_val}</p>
-                            </div>
-                            <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;">
-                                <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Sample Size</p>
-                                <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{count_val}</p>
-                            </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    if historical_avg is not None:
-                        filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
-                        st.info(f"**Historical average calculated using ({historical_count} matches):** {filter_text}")
-
-                        st.subheader("Historical Sales Data")
-
-                        display_cols = ['URL', 'Make', 'Model', 'Year', 'Mileage', 'Exterior Color', 'Transmission_Type','Drivetrain', 'Body Style', 'Sold_Price']
-                        available_cols = [c for c in display_cols if c in matching_cars_df.columns]
-
-                        if available_cols:
-                            st.dataframe(
-                                matching_cars_df[available_cols],
-                                use_container_width=True,
-                                hide_index=True,
-                                column_config={
-                                    "URL": st.column_config.LinkColumn("Listing Link", display_text="View Auction")
-                                }
-                            )
-                        else:
-                            st.dataframe(matching_cars_df, use_container_width=True, hide_index=True)
-                    else:
-                        st.info(f"**Historical average unable to be calculated**")
+                    st.session_state['pred_results'] = {
+                        'price': price,
+                        'historical_avg': historical_avg,
+                        'historical_count': historical_count,
+                        'match_level': match_level,
+                        'applied_conditions': applied_conditions,
+                        'matching_cars_df': matching_cars_df,
+                    }
 
             except Exception as e:
                 st.error(f"Connection failed: {e}")
+
+    # --- 3. Display Results (rendered from session state so they survive tab switches) ---
+    if 'pred_results' in st.session_state:
+        r = st.session_state['pred_results']
+        price = r['price']
+        historical_avg = r['historical_avg']
+        historical_count = r['historical_count']
+        match_level = r['match_level']
+        applied_conditions = r['applied_conditions']
+        matching_cars_df = r['matching_cars_df']
+
+        st.success("Analysis Complete!")
+
+        avg_val = f"${historical_avg:,.0f}" if historical_avg is not None else "N/A"
+        count_val = f"{historical_count} cars" if historical_count > 0 else "0 cars"
+        help_tip = f"Matched on: {match_level}" if historical_avg is not None else "No matching historical data found."
+        st.markdown(f"""
+        <div style="display:flex; gap:16px; align-items:stretch;">
+            <div style="flex:2; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:28px 32px; display:flex; flex-direction:column; justify-content:center;">
+                <p style="font-size:0.875rem; color:#666; font-weight:500; margin:0 0 8px 0;">Estimated Auction Value (AI)</p>
+                <p style="font-size:3rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.1;">${price:,.0f}</p>
+            </div>
+            <div style="flex:1; display:flex; flex-direction:column; gap:10px;">
+                <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;" title="{help_tip}">
+                    <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Average</p>
+                    <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{avg_val}</p>
+                </div>
+                <div style="flex:1; background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:14px 20px; display:flex; flex-direction:column; justify-content:center;">
+                    <p style="font-size:0.8rem; color:#666; font-weight:500; margin:0 0 4px 0;">Historical Sample Size</p>
+                    <p style="font-size:1.5rem; font-weight:700; color:#1a1a1a; margin:0;">{count_val}</p>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if historical_avg is not None:
+            st.markdown("<br>", unsafe_allow_html=True)
+            filter_text = " | ".join([f"**{col}**: {val}" for col, val in applied_conditions])
+            st.info(f"**Historical average calculated using ({historical_count} matches):** {filter_text}")
+
+            st.subheader("Historical Sales Data")
+
+            display_cols = ['URL', 'Make', 'Model', 'Year', 'Mileage', 'Exterior Color', 'Transmission_Type', 'Drivetrain', 'Body Style', 'Sold_Price']
+            available_cols = [c for c in display_cols if c in matching_cars_df.columns]
+
+            if available_cols:
+                st.dataframe(
+                    matching_cars_df[available_cols],
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "URL": st.column_config.LinkColumn("Listing Link", display_text="View Auction")
+                    }
+                )
+            else:
+                st.dataframe(matching_cars_df, use_container_width=True, hide_index=True)
+
+        else:
+            st.info("**Historical average unable to be calculated**")
 
 with tab2:
     st.title("📈 Model Insights")
