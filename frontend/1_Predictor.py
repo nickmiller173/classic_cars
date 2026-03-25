@@ -112,6 +112,15 @@ _defaults = {
     'pred_engine_cyl': '',
     'pred_displacement': 3.0,
     'pred_gears': 6,
+    # Text areas — plain session state keys (not widget keys) so Streamlit never clears them
+    'pred_highlights': '',
+    'pred_equipment': '',
+    'pred_flaws': '',
+    'pred_modifications': '',
+    'pred_service_history': '',
+    'pred_ownership_history': '',
+    'pred_included_items': '',
+    'pred_seller_notes': '',
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -263,15 +272,23 @@ with tab1:
     with st.expander("Click to expand and paste auction text blocks", expanded=True):
         text_col1, text_col2 = st.columns(2)
         with text_col1:
-            highlights = st.text_area("Highlights", key='pred_highlights')
-            equipment = st.text_area("Equipment", key='pred_equipment')
-            flaws = st.text_area("Known Flaws", key='pred_flaws')
-            modifications = st.text_area("Modifications", key='pred_modifications')
+            highlights = st.text_area("Highlights", value=st.session_state['pred_highlights'])
+            st.session_state['pred_highlights'] = highlights
+            equipment = st.text_area("Equipment", value=st.session_state['pred_equipment'])
+            st.session_state['pred_equipment'] = equipment
+            flaws = st.text_area("Known Flaws", value=st.session_state['pred_flaws'])
+            st.session_state['pred_flaws'] = flaws
+            modifications = st.text_area("Modifications", value=st.session_state['pred_modifications'])
+            st.session_state['pred_modifications'] = modifications
         with text_col2:
-            service_history = st.text_area("Recent Service History", key='pred_service_history')
-            ownership_history = st.text_area("Ownership History", key='pred_ownership_history')
-            included_items = st.text_area("Other Items Included in Sale", key='pred_included_items')
-            seller_notes = st.text_area("Seller Notes", key='pred_seller_notes')
+            service_history = st.text_area("Recent Service History", value=st.session_state['pred_service_history'])
+            st.session_state['pred_service_history'] = service_history
+            ownership_history = st.text_area("Ownership History", value=st.session_state['pred_ownership_history'])
+            st.session_state['pred_ownership_history'] = ownership_history
+            included_items = st.text_area("Other Items Included in Sale", value=st.session_state['pred_included_items'])
+            st.session_state['pred_included_items'] = included_items
+            seller_notes = st.text_area("Seller Notes", value=st.session_state['pred_seller_notes'])
+            st.session_state['pred_seller_notes'] = seller_notes
 
     st.markdown("<br>", unsafe_allow_html=True)
 
