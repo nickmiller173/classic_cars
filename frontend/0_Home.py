@@ -78,12 +78,14 @@ else:
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.title("🚗 Cars & Bids Price Intelligence")
 st.markdown(
-    "An independent machine learning platform built entirely on Cars & Bids auction data. "
-    "This tool combines a predictive pricing engine with deep market analysis across "
-    "**{:,} auctions** and **${:.0f}M in recorded sales** — offering buyers, sellers, and the platform "
-    "itself an objective lens on what cars are actually worth.".format(len(df), df['Sold_Price'].sum() / 1e6)
+    "I built this platform because, like most of the Cars & Bids community, I love tracking the prices "
+    "of rare enthusiast cars as well as finding out what quirks and features make them special. My tool "
+    "combines a predictive pricing engine with deep market analysis across **{:,} auctions** and "
+    "**${:.0f}M in recorded sales** — offering anyone an objective lens on what these cars are actually "
+    "worth (and WHY). Whether you're tracking a 1950s roadster or a modern daily, this is my attempt "
+    "to turn raw auction results into fun and interesting insights."
+    .format(len(df), df['Sold_Price'].sum() / 1e6)
 )
-
 if data_through:
     st.caption(
         f"Data current through **{data_through}**. Auction results and model predictions do not reflect "
