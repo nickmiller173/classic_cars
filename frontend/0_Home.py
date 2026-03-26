@@ -183,7 +183,7 @@ if not df.empty:
         st.altair_chart(vol_chart.properties(height=550), use_container_width=True)
 
     with col_stat:
-        st.markdown("#### Market Signals")
+        st.markdown("#### Sample Insights")
         st.caption("Behavioral patterns extracted from listing text and sale outcomes across the full dataset.")
 
         _sig = df_dashboard if not df_dashboard.empty else df
