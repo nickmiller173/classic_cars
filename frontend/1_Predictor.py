@@ -98,11 +98,11 @@ for k, v in _defaults.items():
 st.title("carsandbids.com 🚗 Car Price Predictor")
 st.markdown(
     "This tool uses a machine learning model trained on thousands of historical Cars & Bids auction results to estimate "
-    "what a vehicle is likely to sell for at auction. There are two primary use cases:"
+    "what a vehicle is likely to sell for at auction. I built this tool for two primary use cases:"
 )
 st.markdown(
     "- **Evaluating an active listing:** If a car is currently up for auction on Cars & Bids, enter its specs and "
-    "paste in the listing text below. The predicted price and historical averages will help you assess whether the "
+    "paste them in the listing text below. The predicted price and historical averages will help you assess whether the "
     "current bid represents fair value, a potential deal, or an overpriced vehicle.\n"
     "- **Exploring a car's market value:** Even without an active listing, you can enter any vehicle's specifications "
     "to get a price estimate and understand how factors like mileage, trim, transmission, and condition affect value."

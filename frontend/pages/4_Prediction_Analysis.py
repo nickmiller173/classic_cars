@@ -60,10 +60,10 @@ st.title("📈 Prediction Analysis")
 # --- RESIDUAL ANALYSIS ---
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
-    "Each point represents a car from the held-out test set, plotted by the model's estimate against the actual sale price. "
-    "Points along the dashed diagonal indicate accurate predictions. Points above the line sold for more than expected — "
+    "Each point represents a car from the test data set, plotted by the model's estimate against the actual sale price. "
+    "Points along the dashed diagonal indicate accurate predictions. Points above the line sold for more than expected, which could potentially be"
     "driven by auction dynamics, rarity, or condition factors not fully captured in the listing text. "
-    "Points below the line sold for less. Color intensity reflects the magnitude of the error, with blue indicating "
+    "Points below the line sold for less than expected. Color intensity reflects the magnitude of the error, with blue indicating "
     "underestimates and orange indicating overestimates."
 )
 
@@ -93,11 +93,11 @@ st.divider()
 # --- SHAP GLOBAL FEATURE IMPORTANCE ---
 st.subheader("2. Feature Importance (SHAP Values)")
 st.markdown(
-    "Bar length reflects each feature's average absolute SHAP value across the test set — a model-agnostic measure of "
-    "how much a given input shifts the predicted price, in log-dollar units. Longer bars indicate features the model "
-    "consistently relies on to distinguish high- from low-value vehicles. This does not indicate directionality; "
+    "Bar length reflects each variables's average absolute SHAP value across the test set. SHAP is a model-agnostic measure of "
+    "how much a given input shifts the predicted price. Longer bars indicate variables the model "
+    "consistently relies on to distinguish high vs low value vehicles. This does not indicate directionality, so "
     "a feature ranked highly may push prices up or down depending on its value. Features near the bottom contribute "
-    "minimal signal and may be candidates for removal in future iterations."
+    "minimally to the prediction and may be candidates for removal in future iterations."
 )
 
 if not df_shap.empty:
@@ -117,9 +117,9 @@ st.subheader("3. Marginal Price Effects (Partial Dependence)")
 st.markdown(
     "Partial dependence plots isolate the relationship between a single feature and the predicted price by averaging "
     "out the influence of all other variables. Select a feature below to see how the model's output changes as that "
-    "input varies across its observed range, holding all else equal. Steep slopes indicate high sensitivity; flat "
+    "input varies across its observed range, holding all else equal. Steep slopes indicate high sensitivity while flat "
     "regions suggest the model treats that range as largely price-neutral. Note that interactions between features "
-    "are not captured here — use SHAP values above for a more complete picture."
+    "are not captured here, you can use SHAP values above for a more complete picture."
 )
 
 if not df_pdp.empty:
