@@ -59,7 +59,9 @@ st.markdown(
 if data_through:
     st.caption(
         f"Data current through **{data_through}**. Auction results and model predictions do not reflect "
-        "listings added after this date."
+        "listings added after this date. All figures are derived from publicly available auction records "
+        "and may not capture every transaction or reflect real-time platform data. "
+        "For auctions that did not meet the seller's reserve, the highest recorded bid was treated as the sale price."
     )
 
 st.divider()
@@ -71,7 +73,9 @@ total_auctions = len(df)
 total_gmv = df['Sold_Price'].sum()
 median_price = df['Sold_Price'].median()
 makes_count = df['Make'].nunique()
-models_count = df['Model'].nunique()
+
+oldest_row = df.loc[df['Year'].idxmin()]
+oldest_label = f"{int(oldest_row['Year'])} {oldest_row['Make']} {oldest_row['Model']}"
 
 with m1:
     st.metric("Auctions Analyzed", f"{total_auctions:,}")
@@ -82,7 +86,7 @@ with m3:
 with m4:
     st.metric("Unique Makes", f"{makes_count}")
 with m5:
-    st.metric("Data Coverage", "2020 – 2026")
+    st.metric("Oldest Vehicle Sold", oldest_label)
 
 st.divider()
 
