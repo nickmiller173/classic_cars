@@ -24,12 +24,28 @@ hr { border-color: #C4A882 !important; }
 
 @st.cache_data
 def load_data():
-    file_path = "../data/frontend_data/dashboard_data.csv"
-    if not os.path.exists(file_path):
-        file_path = "data/frontend_data/dashboard_data.csv"
-    return pd.read_csv(file_path)
+    # Prefer cleaned_data_no_encoding (full dataset, pre-price-floor) — falls back to dashboard_data
+    for path in [
+        "../data/frontend_data/cleaned_data_no_encoding.csv",
+        "data/frontend_data/cleaned_data_no_encoding.csv",
+        "../data/frontend_data/dashboard_data.csv",
+        "data/frontend_data/dashboard_data.csv",
+    ]:
+        if os.path.exists(path):
+            return pd.read_csv(path)
+    return pd.DataFrame()
 
 df = load_data()
+
+# Derive most recent auction date for data currency caveat
+if 'Auction_Date' in df.columns:
+    latest_date = pd.to_datetime(df['Auction_Date'], errors='coerce').max()
+    data_through = latest_date.strftime('%B %Y') if pd.notna(latest_date) else None
+elif 'auction_year' in df.columns and 'auction_month' in df.columns:
+    last = df.sort_values(['auction_year', 'auction_month']).iloc[-1]
+    data_through = pd.Timestamp(year=int(last['auction_year']), month=int(last['auction_month']), day=1).strftime('%B %Y')
+else:
+    data_through = None
 
 # ── HEADER ────────────────────────────────────────────────────────────────────
 st.title("🚗 Cars & Bids Price Intelligence")
@@ -39,6 +55,12 @@ st.markdown(
     "**{:,} auctions** and **${:.0f}M in recorded sales** — offering buyers, sellers, and the platform "
     "itself an objective lens on what cars are actually worth.".format(len(df), df['Sold_Price'].sum() / 1e6)
 )
+
+if data_through:
+    st.caption(
+        f"Data current through **{data_through}**. Auction results and model predictions do not reflect "
+        "listings added after this date."
+    )
 
 st.divider()
 
