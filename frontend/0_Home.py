@@ -180,7 +180,7 @@ if not df.empty:
                 alt.Tooltip('count:Q', format=',', title='Auctions')
             ]
         )
-        st.altair_chart(vol_chart.properties(height=450), use_container_width=True)
+        st.altair_chart(vol_chart.properties(height=550), use_container_width=True)
 
     with col_stat:
         st.markdown("#### Market Signals")
