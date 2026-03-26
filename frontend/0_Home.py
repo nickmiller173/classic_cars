@@ -52,7 +52,18 @@ def load_data():
             return pd.read_csv(path)
     return pd.DataFrame()
 
+@st.cache_data
+def load_dashboard_data():
+    for path in [
+        "../data/frontend_data/dashboard_data.csv",
+        "data/frontend_data/dashboard_data.csv",
+    ]:
+        if os.path.exists(path):
+            return pd.read_csv(path)
+    return pd.DataFrame()
+
 df = load_data()
+df_dashboard = load_dashboard_data()
 
 # Derive most recent auction date for data currency caveat
 if 'Auction_Date' in df.columns:
@@ -175,14 +186,15 @@ if not df.empty:
         st.markdown("#### Market Signals")
         st.caption("Behavioral patterns extracted from listing text and sale outcomes across the full dataset.")
 
+        _sig = df_dashboard if not df_dashboard.empty else df
         one_owner_premium = (
-            df[df['one_owner_ind'] == 1]['Sold_Price'].median() /
-            df[df['one_owner_ind'] == 0]['Sold_Price'].median() - 1
+            _sig[_sig['one_owner_ind'] == 1]['Sold_Price'].mean() /
+            _sig[_sig['one_owner_ind'] == 0]['Sold_Price'].mean() - 1
         ) * 100
 
         two_keys_premium = (
-            df[df['2_keys_ind'] == 1]['Sold_Price'].median() /
-            df[df['2_keys_ind'] == 0]['Sold_Price'].median() - 1
+            _sig[_sig['2_keys_ind'] == 1]['Sold_Price'].mean() /
+            _sig[_sig['2_keys_ind'] == 0]['Sold_Price'].mean() - 1
         ) * 100
 
         top_make = df['Make'].value_counts().index[0]
@@ -193,12 +205,12 @@ if not df.empty:
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">SINGLE-OWNER PREMIUM</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{one_owner_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">median price vs. multi-owner cars</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price vs. multi-owner cars</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{two_keys_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">median price when both keys are present</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price when both keys are present</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">MOST LISTED MAKE</p>
