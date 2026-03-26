@@ -22,6 +22,8 @@ svd_model = encoding_artifacts['svd_model']               # NEW: Load SVD
 
 def lambda_handler(event, context):
     body = json.loads(event['body'])
+    if body.get('warmup'):
+        return {"statusCode": 200, "body": json.dumps({"status": "warm"})}
     input_df = pd.DataFrame([body]) 
     
     # 2. Recreate missing calculated features 

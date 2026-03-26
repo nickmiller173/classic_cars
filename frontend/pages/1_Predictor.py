@@ -319,8 +319,12 @@ if submitted:
 
     with st.spinner("Analyzing data and communicating with AWS Lambda..."):
         try:
-            # --- 1. Get Prediction from Lambda ---
-            response = requests.post(API_URL, json=payload)
+            # --- 1. Get Prediction from Lambda (with cold-start retry) ---
+            response = requests.post(API_URL, json=payload, timeout=90)
+            if response.status_code == 503:
+                st.toast("Model is warming up — retrying...", icon="⏳")
+                response = requests.post(API_URL, json=payload, timeout=90)
+
             price = 0
 
             if response.status_code == 200:
