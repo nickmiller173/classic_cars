@@ -90,6 +90,46 @@ with m5:
 
 st.divider()
 
+# ── NAVIGATION CARDS ─────────────────────────────────────────────────────────
+st.markdown("#### Explore the Platform")
+nav1, nav2 = st.columns(2)
+
+with nav1:
+    st.markdown("""
+    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px;">
+        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
+        <p style="font-size:0.92rem; color:#444; margin:0;">
+            Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
+            benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
+            and sellers setting realistic expectations.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    cl1, cl2 = st.columns(2)
+    with cl1:
+        st.page_link("pages/1_Predictor.py", label="Price Predictor", icon="🔮", use_container_width=True)
+    with cl2:
+        st.page_link("pages/4_Prediction_Analysis.py", label="Prediction Analysis", icon="📈", use_container_width=True)
+
+with nav2:
+    st.markdown("""
+    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px;">
+        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
+        <p style="font-size:0.92rem; color:#444; margin:0;">
+            Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns,
+            volume growth, and NLP-derived insights on how listing language and condition descriptors
+            correlate with final sale price.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    cl3, cl4 = st.columns(2)
+    with cl3:
+        st.page_link("pages/2_Market_Dashboard.py", label="Market Dashboard", icon="📊", use_container_width=True)
+    with cl4:
+        st.page_link("pages/3_NLP_Insights.py", label="NLP Insights", icon="💬", use_container_width=True)
+
+st.divider()
+
 # ── CHARTS ────────────────────────────────────────────────────────────────────
 if not df.empty:
     col_left, col_right = st.columns(2)
@@ -219,34 +259,3 @@ if not df.empty:
         </div>
         """, unsafe_allow_html=True)
 
-st.divider()
-
-# ── NAVIGATION CARDS ─────────────────────────────────────────────────────────
-st.markdown("#### Explore the Platform")
-nav1, nav2 = st.columns(2)
-
-with nav1:
-    st.markdown("""
-    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
-        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
-        <p style="font-size:0.92rem; color:#444; margin:0 0 16px 0;">
-            Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
-            benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
-            and sellers setting realistic expectations.
-        </p>
-        <p style="font-size:0.82rem; color:#8B5E3C; font-weight:600; margin:0;">→ Price Predictor &nbsp;|&nbsp; Prediction Analysis</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with nav2:
-    st.markdown("""
-    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
-        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
-        <p style="font-size:0.92rem; color:#444; margin:0 0 16px 0;">
-            Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns,
-            volume growth, and NLP-derived insights on how listing language and condition descriptors
-            correlate with final sale price.
-        </p>
-        <p style="font-size:0.82rem; color:#8B5E3C; font-weight:600; margin:0;">→ Market Dashboard &nbsp;|&nbsp; NLP Insights</p>
-    </div>
-    """, unsafe_allow_html=True)
