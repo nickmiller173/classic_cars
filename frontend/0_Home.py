@@ -18,14 +18,22 @@ st.markdown("""
     font-weight: 600;
 }
 hr { border-color: #C4A882 !important; }
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: #EDE8DF !important;
-    border-color: #C4A882 !important;
-    border-radius: 12px !important;
+.nav-link {
+    display: inline-block;
+    background-color: #fff;
+    border: 1px solid #C4A882;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #8B5E3C !important;
+    text-decoration: none;
+    margin-top: 16px;
+    margin-right: 8px;
 }
-div[data-testid="stVerticalBlockBorderWrapper"] > div {
-    background-color: #EDE8DF !important;
-    border-radius: 11px !important;
+.nav-link:hover {
+    background-color: #C4A882;
+    color: #fff !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -95,13 +103,10 @@ with m3:
 with m4:
     st.metric("Unique Makes", f"{makes_count}")
 with m5:
-    st.markdown(f"""
-    <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
-        <div style="font-size:0.875rem; color:#8B5E3C; font-weight:600; margin-bottom:8px;">Oldest Vehicle Sold</div>
-        <div style="font-size:2rem; font-weight:700; color:#31333F; line-height:1.2;">{int(oldest_row['Year'])}</div>
-        <div style="font-size:0.875rem; color:#31333F; margin-top:4px;">{oldest_row['Make']} {oldest_row['Model']}</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.metric(
+        label=f"Oldest Sold — {oldest_row['Make']} {oldest_row['Model']}",
+        value=int(oldest_row['Year'])
+    )
 
 st.divider()
 
@@ -110,32 +115,32 @@ st.markdown("#### Explore the Platform")
 nav1, nav2 = st.columns(2)
 
 with nav1:
-    with st.container(border=True):
-        st.markdown("**🔮 Price Intelligence**")
-        st.markdown(
-            "Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate, "
-            "benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings "
-            "and sellers setting realistic expectations."
-        )
-        cl1, cl2 = st.columns(2)
-        with cl1:
-            st.page_link("pages/1_Predictor.py", label="Price Predictor", icon="🔮", use_container_width=True)
-        with cl2:
-            st.page_link("pages/4_Prediction_Analysis.py", label="Prediction Analysis", icon="📈", use_container_width=True)
+    st.markdown("""
+    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
+        <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
+        <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
+            Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
+            benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
+            and sellers setting realistic expectations.
+        </p>
+        <a href="/1_Predictor" target="_self" class="nav-link">Price Predictor</a>
+        <a href="/4_Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
+    </div>
+    """, unsafe_allow_html=True)
 
 with nav2:
-    with st.container(border=True):
-        st.markdown("**📊 Market Intelligence**")
-        st.markdown(
-            "Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns, "
-            "volume growth, and NLP-derived insights on how listing language and condition descriptors "
-            "correlate with final sale price."
-        )
-        cl3, cl4 = st.columns(2)
-        with cl3:
-            st.page_link("pages/2_Market_Dashboard.py", label="Market Dashboard", icon="📊", use_container_width=True)
-        with cl4:
-            st.page_link("pages/3_NLP_Insights.py", label="NLP Insights", icon="💬", use_container_width=True)
+    st.markdown("""
+    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
+        <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
+        <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
+            Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns,
+            volume growth, and NLP-derived insights on how listing language and condition descriptors
+            correlate with final sale price.
+        </p>
+        <a href="/2_Market_Dashboard" target="_self" class="nav-link">Market Dashboard</a>
+        <a href="/3_NLP_Insights" target="_self" class="nav-link">NLP Insights</a>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
