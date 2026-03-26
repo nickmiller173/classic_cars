@@ -103,10 +103,13 @@ with m3:
 with m4:
     st.metric("Unique Makes", f"{makes_count}")
 with m5:
-    st.metric(
-        label=f"Oldest Sold — {oldest_row['Make']} {oldest_row['Model']}",
-        value=int(oldest_row['Year'])
-    )
+    st.markdown(f"""
+    <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
+        <div style="font-size:14px; color:#8B5E3C; font-weight:600; margin:0 0 4px 0;">Oldest Car</div>
+        <div style="font-size:2.25rem; font-weight:600; color:#31333F; line-height:1.2; margin:0;">{int(oldest_row['Year'])}</div>
+        <div style="font-size:14px; color:#6b7280; margin:4px 0 0 0;">{oldest_row['Make']} {oldest_row['Model']}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
@@ -123,8 +126,8 @@ with nav1:
             benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
             and sellers setting realistic expectations.
         </p>
-        <a href="/1_Predictor" target="_self" class="nav-link">Price Predictor</a>
-        <a href="/4_Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
+        <a href="/Predictor" target="_self" class="nav-link">Price Predictor</a>
+        <a href="/Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
     </div>
     """, unsafe_allow_html=True)
 
@@ -137,8 +140,8 @@ with nav2:
             volume growth, and NLP-derived insights on how listing language and condition descriptors
             correlate with final sale price.
         </p>
-        <a href="/2_Market_Dashboard" target="_self" class="nav-link">Market Dashboard</a>
-        <a href="/3_NLP_Insights" target="_self" class="nav-link">NLP Insights</a>
+        <a href="/Market_Dashboard" target="_self" class="nav-link">Market Dashboard</a>
+        <a href="/NLP_Insights" target="_self" class="nav-link">NLP Insights</a>
     </div>
     """, unsafe_allow_html=True)
 
