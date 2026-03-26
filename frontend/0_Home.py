@@ -18,11 +18,14 @@ st.markdown("""
     font-weight: 600;
 }
 hr { border-color: #C4A882 !important; }
-[data-testid="stVerticalBlockBorderWrapper"],
-[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {
+div[data-testid="stVerticalBlockBorderWrapper"] {
     background-color: #EDE8DF !important;
     border-color: #C4A882 !important;
     border-radius: 12px !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] > div {
+    background-color: #EDE8DF !important;
+    border-radius: 11px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -94,10 +97,9 @@ with m4:
 with m5:
     st.markdown(f"""
     <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
-        <p style="font-size:0.875rem; color:#8B5E3C; font-weight:600; margin:0 0 6px 0;">Oldest Vehicle Sold</p>
-        <p style="font-size:1.1rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.4;">
-            {int(oldest_row['Year'])}<br>{oldest_row['Make']} {oldest_row['Model']}
-        </p>
+        <div style="font-size:0.875rem; color:#8B5E3C; font-weight:600; margin-bottom:8px;">Oldest Vehicle Sold</div>
+        <div style="font-size:2rem; font-weight:700; color:#31333F; line-height:1.2;">{int(oldest_row['Year'])}</div>
+        <div style="font-size:0.875rem; color:#31333F; margin-top:4px;">{oldest_row['Make']} {oldest_row['Model']}</div>
     </div>
     """, unsafe_allow_html=True)
 
