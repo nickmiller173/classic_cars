@@ -180,7 +180,7 @@ if not df.empty:
                 alt.Tooltip('count:Q', format=',', title='Auctions')
             ]
         )
-        st.altair_chart(vol_chart.properties(height=350), use_container_width=True)
+        st.altair_chart(vol_chart.properties(height=450), use_container_width=True)
 
     with col_stat:
         st.markdown("#### Market Signals")
@@ -205,12 +205,12 @@ if not df.empty:
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">EMISSIONS MENTIONED</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">{emissions_premium:+.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price vs. listings without emissions mention</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings that mention passing emissions or smog checks vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{two_keys_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price when both keys are present</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings where the seller confirms both original keys are included vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">MOST LISTED MAKE</p>
