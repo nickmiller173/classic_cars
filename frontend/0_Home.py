@@ -79,17 +79,17 @@ else:
 st.title("🚗 Cars & Bids Price Intelligence")
 st.markdown(
     "I built this platform because, like most of the Cars & Bids community, I love tracking the prices "
-    "of rare enthusiast cars as well as finding out what quirks and features make them special. My tool "
-    "combines a predictive pricing engine with deep market analysis across **{:,} auctions** and "
-    "**${:.0f}M in recorded sales** — offering anyone an objective lens on what these cars are actually "
-    "worth (and WHY). Whether you're tracking a 1950s roadster or a modern daily, this is my attempt "
+    "of rare enthusiast cars as well as finding out what quirks and features make them unique. My tool "
+    "combines a predictive pricing engine with raw data analysis across **{:,} auctions** and "
+    "**${:.0f}M in recorded sales** — offering any user an objective lens on what these cars are actually "
+    "worth (and WHY). Whether you're tracking a vintage sports car or a modern daily driver, this is my attempt "
     "to turn raw auction results into fun and interesting insights."
     .format(len(df), df['Sold_Price'].sum() / 1e6)
 )
 if data_through:
     st.caption(
-        f"Data current through **{data_through}**. Auction results and model predictions do not reflect "
-        "listings added after this date. All figures are derived from publicly available auction records "
+        f"Note - this data is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
+        "listings added after this date. All of the figures are derived from publicly available auction records "
         "and may not capture every transaction or reflect real-time platform data. "
         "For auctions that did not meet the seller's reserve, the highest recorded bid was treated as the sale price."
     )
