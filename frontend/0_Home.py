@@ -164,7 +164,9 @@ st.divider()
 
 # ── CHARTS ────────────────────────────────────────────────────────────────────
 if not df.empty:
-    # ── CHARTS + MARKET SIGNALS ──────────────────────────────────────────────
+    st.markdown("#### 📊 A Glimpse of the Data")
+    st.caption("The charts below are a small sample of the market intelligence available across the platform. Explore the full analysis in the sections above.")
+
     col_vol, col_stat = st.columns([2, 1])
 
     with col_vol:
