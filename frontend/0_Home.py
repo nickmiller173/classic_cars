@@ -18,6 +18,11 @@ st.markdown("""
     font-weight: 600;
 }
 hr { border-color: #C4A882 !important; }
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: #EDE8DF !important;
+    border-color: #C4A882 !important;
+    border-radius: 12px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -75,7 +80,7 @@ median_price = df['Sold_Price'].median()
 makes_count = df['Make'].nunique()
 
 oldest_row = df.loc[df['Year'].idxmin()]
-oldest_label = f"{int(oldest_row['Year'])} {oldest_row['Make']} {oldest_row['Model']}"
+oldest_label = f"{int(oldest_row['Year'])} {oldest_row['Make']}"
 
 with m1:
     st.metric("Auctions Analyzed", f"{total_auctions:,}")
@@ -95,38 +100,32 @@ st.markdown("#### Explore the Platform")
 nav1, nav2 = st.columns(2)
 
 with nav1:
-    st.markdown("""
-    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px;">
-        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
-        <p style="font-size:0.92rem; color:#444; margin:0;">
-            Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
-            benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
-            and sellers setting realistic expectations.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    cl1, cl2 = st.columns(2)
-    with cl1:
-        st.page_link("pages/1_Predictor.py", label="Price Predictor", icon="🔮", use_container_width=True)
-    with cl2:
-        st.page_link("pages/4_Prediction_Analysis.py", label="Prediction Analysis", icon="📈", use_container_width=True)
+    with st.container(border=True):
+        st.markdown("**🔮 Price Intelligence**")
+        st.markdown(
+            "Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate, "
+            "benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings "
+            "and sellers setting realistic expectations."
+        )
+        cl1, cl2 = st.columns(2)
+        with cl1:
+            st.page_link("pages/1_Predictor.py", label="Price Predictor", icon="🔮", use_container_width=True)
+        with cl2:
+            st.page_link("pages/4_Prediction_Analysis.py", label="Prediction Analysis", icon="📈", use_container_width=True)
 
 with nav2:
-    st.markdown("""
-    <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px;">
-        <p style="font-size:1.4rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
-        <p style="font-size:0.92rem; color:#444; margin:0;">
-            Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns,
-            volume growth, and NLP-derived insights on how listing language and condition descriptors
-            correlate with final sale price.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-    cl3, cl4 = st.columns(2)
-    with cl3:
-        st.page_link("pages/2_Market_Dashboard.py", label="Market Dashboard", icon="📊", use_container_width=True)
-    with cl4:
-        st.page_link("pages/3_NLP_Insights.py", label="NLP Insights", icon="💬", use_container_width=True)
+    with st.container(border=True):
+        st.markdown("**📊 Market Intelligence**")
+        st.markdown(
+            "Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns, "
+            "volume growth, and NLP-derived insights on how listing language and condition descriptors "
+            "correlate with final sale price."
+        )
+        cl3, cl4 = st.columns(2)
+        with cl3:
+            st.page_link("pages/2_Market_Dashboard.py", label="Market Dashboard", icon="📊", use_container_width=True)
+        with cl4:
+            st.page_link("pages/3_NLP_Insights.py", label="NLP Insights", icon="💬", use_container_width=True)
 
 st.divider()
 
