@@ -96,7 +96,17 @@ for k, v in _defaults.items():
 
 # --- UI HEADER ---
 st.title("carsandbids.com 🚗 Car Price Predictor")
-st.markdown("Using machine learning, instantly estimate the auction value of a classic car based on its specifications and historical condition reports")
+st.markdown(
+    "This tool uses a machine learning model trained on thousands of historical Cars & Bids auction results to estimate "
+    "what a vehicle is likely to sell for at auction. There are two primary use cases:"
+)
+st.markdown(
+    "- **Evaluating an active listing:** If a car is currently up for auction on Cars & Bids, enter its specs and "
+    "paste in the listing text below. The predicted price and historical averages will help you assess whether the "
+    "current bid represents fair value, a potential deal, or an overpriced vehicle.\n"
+    "- **Exploring a car's market value:** Even without an active listing, you can enter any vehicle's specifications "
+    "to get a price estimate and understand how factors like mileage, trim, transmission, and condition affect value."
+)
 st.divider()
 
 # --- VEHICLE SPECS ---
@@ -246,7 +256,12 @@ st.divider()
 
 # --- AUCTION TEXT ---
 st.subheader("📝 2. Auction Description")
-st.info("Paste the exact text from the listing. The app will extract features like mods, flaws, and condition indicators.")
+st.info(
+    "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, "
+    "paste the corresponding text directly from the listing page. The model will parse each section for condition signals — "
+    "modifications, known flaws, service history, and more — that meaningfully influence price. If you are exploring a vehicle "
+    "generally, these fields can be left blank or filled in with known details."
+)
 
 with st.expander("Click to expand and paste auction text blocks", expanded=True):
     text_col1, text_col2 = st.columns(2)
