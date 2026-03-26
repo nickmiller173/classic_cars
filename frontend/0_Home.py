@@ -180,16 +180,16 @@ if not df.empty:
                 alt.Tooltip('count:Q', format=',', title='Auctions')
             ]
         )
-        st.altair_chart(vol_chart, use_container_width=True)
+        st.altair_chart(vol_chart.properties(height=350), use_container_width=True)
 
     with col_stat:
         st.markdown("#### Market Signals")
         st.caption("Behavioral patterns extracted from listing text and sale outcomes across the full dataset.")
 
         _sig = df_dashboard if not df_dashboard.empty else df
-        one_owner_premium = (
-            _sig[_sig['one_owner_ind'] == 1]['Sold_Price'].mean() /
-            _sig[_sig['one_owner_ind'] == 0]['Sold_Price'].mean() - 1
+        emissions_premium = (
+            _sig[_sig['emissions_ind'] == 1]['Sold_Price'].mean() /
+            _sig[_sig['emissions_ind'] == 0]['Sold_Price'].mean() - 1
         ) * 100
 
         two_keys_premium = (
@@ -203,9 +203,9 @@ if not df.empty:
         st.markdown(f"""
         <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
-                <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">SINGLE-OWNER PREMIUM</p>
-                <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{one_owner_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price vs. multi-owner cars</p>
+                <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">EMISSIONS MENTIONED</p>
+                <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">{emissions_premium:+.1f}%</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">avg price vs. listings without emissions mention</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
