@@ -258,9 +258,11 @@ st.divider()
 st.subheader("📝 2. Auction Description")
 st.info(
     "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, "
-    "paste the corresponding text directly from the listing page. The model will parse each section for condition signals — "
-    "modifications, known flaws, service history, and more — that meaningfully influence price. If you are exploring a vehicle "
-    "generally, these fields can be left blank or filled in with known details."
+    "paste the corresponding text directly from the listing page for the most accurate estimate. The model will parse each "
+    "section for condition signals — modifications, known flaws, service history, and more — that meaningfully influence price. "
+    "Typing a few casual words will have little effect; the model was trained on full listing text and responds to specific "
+    "keywords and phrases (e.g. 'one owner', 'california car', '2 keys', 'emissions'). If you are exploring a vehicle "
+    "generally, these fields can be left blank."
 )
 
 with st.expander("Click to expand and paste auction text blocks", expanded=True):
