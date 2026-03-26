@@ -94,22 +94,26 @@ makes_count = df['Make'].nunique()
 oldest_row = df.loc[df['Year'].idxmin()]
 oldest_label = f"{int(oldest_row['Year'])} {oldest_row['Make']}"
 
-with m1:
-    st.metric("Auctions Analyzed", f"{total_auctions:,}")
-with m2:
-    st.metric("Total Platform GMV", f"${total_gmv / 1e6:.0f}M+")
-with m3:
-    st.metric("Median Sale Price", f"${median_price:,.0f}")
-with m4:
-    st.metric("Unique Makes", f"{makes_count}")
-with m5:
-    st.markdown(f"""
+def metric_card(label, value, subtitle=None):
+    sub = f'<div style="font-size:14px; color:#6b7280; margin:4px 0 0 0;">{subtitle}</div>' if subtitle else ''
+    return f"""
     <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
-        <div style="font-size:14px; color:#8B5E3C; font-weight:600; margin:0 0 4px 0;">Oldest Car</div>
-        <div style="font-size:2.25rem; font-weight:600; color:#31333F; line-height:1.2; margin:0;">{int(oldest_row['Year'])}</div>
-        <div style="font-size:14px; color:#6b7280; margin:4px 0 0 0;">{oldest_row['Make']} {oldest_row['Model']}</div>
+        <div style="font-size:14px; color:#8B5E3C; font-weight:400; margin:0 0 4px 0;">{label}</div>
+        <div style="font-size:2.25rem; font-weight:700; color:#31333F; line-height:1.2; margin:0;">{value}</div>
+        {sub}
     </div>
-    """, unsafe_allow_html=True)
+    """
+
+with m1:
+    st.markdown(metric_card("Auctions Analyzed", f"{total_auctions:,}"), unsafe_allow_html=True)
+with m2:
+    st.markdown(metric_card("Total Platform GMV", f"${total_gmv / 1e6:.0f}M+"), unsafe_allow_html=True)
+with m3:
+    st.markdown(metric_card("Median Sale Price", f"${median_price:,.0f}"), unsafe_allow_html=True)
+with m4:
+    st.markdown(metric_card("Unique Makes", f"{makes_count}"), unsafe_allow_html=True)
+with m5:
+    st.markdown(metric_card("Oldest Car", f"{int(oldest_row['Year'])}", f"{oldest_row['Make']} {oldest_row['Model']}"), unsafe_allow_html=True)
 
 st.divider()
 
