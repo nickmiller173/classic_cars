@@ -18,7 +18,8 @@ st.markdown("""
     font-weight: 600;
 }
 hr { border-color: #C4A882 !important; }
-[data-testid="stVerticalBlockBorderWrapper"] {
+[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlockBorderWrapper"] > div[data-testid="stVerticalBlock"] {
     background-color: #EDE8DF !important;
     border-color: #C4A882 !important;
     border-radius: 12px !important;
@@ -91,7 +92,14 @@ with m3:
 with m4:
     st.metric("Unique Makes", f"{makes_count}")
 with m5:
-    st.metric("Oldest Vehicle Sold", oldest_label)
+    st.markdown(f"""
+    <div style="background-color:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
+        <p style="font-size:0.875rem; color:#8B5E3C; font-weight:600; margin:0 0 6px 0;">Oldest Vehicle Sold</p>
+        <p style="font-size:1.1rem; font-weight:700; color:#1a1a1a; margin:0; line-height:1.4;">
+            {int(oldest_row['Year'])}<br>{oldest_row['Make']} {oldest_row['Model']}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.divider()
 
@@ -131,74 +139,7 @@ st.divider()
 
 # ── CHARTS ────────────────────────────────────────────────────────────────────
 if not df.empty:
-    col_left, col_right = st.columns(2)
-
-    with col_left:
-        st.markdown("#### Average Sale Price Over Time")
-        st.caption(
-            "Monthly average hammer price across all makes and models. The platform saw significant "
-            "appreciation through 2022–2023 driven by post-pandemic collector car demand, stabilizing "
-            "in the $28–32k range through 2025–2026."
-        )
-
-        df['date'] = pd.to_datetime(
-            df['auction_year'].astype(str) + '-' + df['auction_month'].astype(str).str.zfill(2) + '-01'
-        )
-        monthly = df.groupby('date')['Sold_Price'].mean().reset_index()
-        monthly.columns = ['date', 'avg_price']
-
-        area = alt.Chart(monthly).mark_area(
-            color='#C4895A', opacity=0.15, line=False
-        ).encode(
-            x=alt.X('date:T', title=None),
-            y=alt.Y('avg_price:Q', scale=alt.Scale(zero=False))
-        )
-
-        line = alt.Chart(monthly).mark_line(
-            color='#C4895A', strokeWidth=2.5
-        ).encode(
-            x=alt.X('date:T', title=None),
-            y=alt.Y('avg_price:Q', title='Avg Sale Price', axis=alt.Axis(format='$,.0f'), scale=alt.Scale(zero=False)),
-            tooltip=[
-                alt.Tooltip('date:T', title='Month', format='%b %Y'),
-                alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price')
-            ]
-        )
-
-        st.altair_chart(area + line, use_container_width=True)
-
-    with col_right:
-        st.markdown("#### Top Makes by Average Sale Price")
-        st.caption(
-            "Restricted to makes with 50 or more auctions for statistical reliability. "
-            "Reflects the full price distribution including condition, mileage, and spec variance within each brand."
-        )
-
-        make_stats = (
-            df.groupby('Make')['Sold_Price']
-            .agg(['mean', 'count'])
-            .query('count >= 50')
-            .sort_values('mean', ascending=False)
-            .head(12)
-            .reset_index()
-        )
-        make_stats.columns = ['Make', 'avg_price', 'count']
-
-        bar = alt.Chart(make_stats).mark_bar(color='#C4895A').encode(
-            x=alt.X('avg_price:Q', title='Average Sale Price', axis=alt.Axis(format='$,.0f')),
-            y=alt.Y('Make:N', sort='-x', title=None),
-            tooltip=[
-                'Make',
-                alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Sale Price'),
-                alt.Tooltip('count:Q', format=',', title='Auctions')
-            ]
-        )
-
-        st.altair_chart(bar, use_container_width=True)
-
-    st.divider()
-
-    # ── SECOND ROW: volume + insight stat ────────────────────────────────────
+    # ── CHARTS + MARKET SIGNALS ──────────────────────────────────────────────
     col_vol, col_stat = st.columns([2, 1])
 
     with col_vol:
@@ -225,18 +166,13 @@ if not df.empty:
             df[df['one_owner_ind'] == 0]['Sold_Price'].median() - 1
         ) * 100
 
+        two_keys_premium = (
+            df[df['2_keys_ind'] == 1]['Sold_Price'].median() /
+            df[df['2_keys_ind'] == 0]['Sold_Price'].median() - 1
+        ) * 100
+
         top_make = df['Make'].value_counts().index[0]
         top_make_count = df['Make'].value_counts().iloc[0]
-
-        sport_seat_premium = (
-            df[df['has_sport_seats'] == 1]['Sold_Price'].median() /
-            df[df['has_sport_seats'] == 0]['Sold_Price'].median() - 1
-        ) * 100
-
-        new_tire_premium = (
-            df[df['has_new_tires'] == 1]['Sold_Price'].median() /
-            df[df['has_new_tires'] == 0]['Sold_Price'].median() - 1
-        ) * 100
 
         st.markdown(f"""
         <div style="display:flex; flex-direction:column; gap:12px; margin-top:8px;">
@@ -246,9 +182,9 @@ if not df.empty:
                 <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">median price vs. multi-owner cars</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
-                <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">SPORT SEATS PREMIUM</p>
-                <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{sport_seat_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">median price vs. standard interior</p>
+                <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
+                <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{two_keys_premium:.1f}%</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">median price when both keys are present</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">MOST LISTED MAKE</p>
