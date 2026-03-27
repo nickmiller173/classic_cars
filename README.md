@@ -260,13 +260,23 @@ The price predictor UI. Sends a JSON payload to the Lambda API and displays the 
 ---
 
 ### `frontend/pages/2_Market_Trends.py`
-Five-tab exploratory dashboard covering platform-wide price trends, per-make/model trends, sales volume, a seasonal heatmap, and the model year sweet spot tool.
+Seven-tab exploratory dashboard covering platform-wide price trends, per-make/model trends, sales volume, a seasonal heatmap, the model year sweet spot tool, depreciation curves, and price distribution by body style.
+
+**Tabs:**
+1. **Market Overview** — monthly average price, top/bottom 10 makes by avg price, private party vs. dealer breakdown
+2. **Price by Make & Model** — per-make/model price trend over time with an optional model year filter to isolate a specific vintage
+3. **Sales Volume** — monthly listing count across the full platform
+4. **Seasonal Trends** — price heatmap by month and year
+5. **Model Year Sweet Spot** — bar chart of avg price by production year for a selected make/model
+6. **Depreciation by Make** — multi-line chart of avg sale price vs. vehicle age at auction for the top 8 makes; reveals which brands appreciate vs. depreciate
+7. **Price by Body Style** — box plot of sale price distribution for each body style (Coupe, Sedan, SUV/Crossover, etc.)
 
 **Filtering thresholds:**
 - Price trend tab: only shows make/model pairs with ≥3 months having ≥2 sales, and filters out individual months with only 1 sale (a single unusual auction makes its price identical to the monthly average, creating a misleading spike)
 - Sweet spot tab: requires ≥2 qualifying model years with ≥3 sales each (a one-bar chart has nothing to compare)
+- Depreciation tab: requires ≥3 sales per make/age bucket; vehicle age capped at 50 years
 
-**Data source:** `dashboard_data.csv`
+**Data sources:** `dashboard_data.csv` (all tabs except seller type and body style), `cars_and_bids_full_history_v2.csv` (seller type breakdown and body style box plot — the only raw file that carries those columns)
 
 ---
 

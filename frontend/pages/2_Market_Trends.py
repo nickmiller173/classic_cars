@@ -36,12 +36,14 @@ df = load_full_data()
 
 # tab definitions
 if not df.empty:
-    tab0, tab1, tab2, tab3, tab4 = st.tabs([
+    tab0, tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
         "Market Overview",
         "Price by Make & Model",
         "Sales Volume",
         "Seasonal Trends",
-        "Model Year Sweet Spot"
+        "Model Year Sweet Spot",
+        "Depreciation by Make",
+        "Price by Body Style",
     ])
 
     with tab0:
@@ -104,6 +106,48 @@ if not df.empty:
             ]
         )
         st.altair_chart(bar_bottom, use_container_width=True)
+
+        # Seller type breakdown — uses dashboard_data.csv (Seller Type column added in dashboard_data.ipynb)
+        st.write("#### Private Party vs. Dealer Sales")
+        st.caption(
+            "Breakdown of auction listings by seller type and the average hammer price each group commands. "
+            "Dealer listings often skew toward newer or more mainstream inventory while private party sellers "
+            "list a wider range of vintages and condition levels."
+        )
+
+        if 'Seller Type' in df.columns:
+            seller_summary = df.groupby('Seller Type')['Sold_Price'].agg(
+                count='count', avg_price='mean'
+            ).reset_index()
+
+            col_cnt, col_avg = st.columns(2)
+
+            with col_cnt:
+                st.write("**Listing Count by Seller Type**")
+                bar_cnt = alt.Chart(seller_summary).mark_bar(color='#C4895A').encode(
+                    x=alt.X('Seller Type:N', title='', axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y('count:Q', title='Number of Listings'),
+                    tooltip=[
+                        alt.Tooltip('Seller Type:N', title='Seller Type'),
+                        alt.Tooltip('count:Q', format=',', title='Listings')
+                    ]
+                )
+                st.altair_chart(bar_cnt, use_container_width=True)
+
+            with col_avg:
+                st.write("**Average Sale Price by Seller Type**")
+                bar_avg = alt.Chart(seller_summary).mark_bar(color='#8B5E3C').encode(
+                    x=alt.X('Seller Type:N', title='', axis=alt.Axis(labelAngle=0)),
+                    y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
+                            scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+                    tooltip=[
+                        alt.Tooltip('Seller Type:N', title='Seller Type'),
+                        alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price')
+                    ]
+                )
+                st.altair_chart(bar_avg, use_container_width=True)
+        else:
+            st.info("Seller Type data not yet available. Re-run dashboard_data.ipynb to add this column.")
 
     with tab1:
         st.subheader("Price Trend by Make & Model")
@@ -269,3 +313,82 @@ if not df.empty:
             st.altair_chart(bar_year, use_container_width=True)
         else:
             st.info("Not enough data across model years for this make.")
+
+    with tab5:
+        st.subheader("Depreciation Curves by Make")
+        st.caption(
+            "Shows how average sale price relates to vehicle age at auction time for the top makes by sales volume. "
+            "A downward slope indicates typical depreciation; a U-shape or upward curve suggests the model has crossed "
+            "into collector territory where older examples command a premium. Car age is calculated as auction year minus model year."
+        )
+
+        # Derive car age from existing columns (auction_year - model year).
+        # This reflects how old the car was when it actually sold, not the calendar year of auction.
+        df_dep = df.copy()
+        df_dep['car_age'] = df_dep['auction_year'] - df_dep['Year']
+        df_dep = df_dep[(df_dep['car_age'] >= 0) & (df_dep['car_age'] <= 50)]
+
+        # Limit to top 8 makes by sales volume for a readable chart.
+        top_makes_dep = df_dep['Make'].value_counts().nlargest(8).index.tolist()
+        df_dep = df_dep[df_dep['Make'].isin(top_makes_dep)]
+
+        # Average price per make per age bucket; require ≥3 sales per cell to avoid noise.
+        dep_curve = df_dep.groupby(['Make', 'car_age'])['Sold_Price'].agg(
+            avg_price='mean', sales_count='count'
+        ).reset_index()
+        dep_curve = dep_curve[dep_curve['sales_count'] >= 3]
+
+        if not dep_curve.empty:
+            line_dep = alt.Chart(dep_curve).mark_line(point=True).encode(
+                x=alt.X('car_age:Q', title='Vehicle Age at Auction (Years)'),
+                y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
+                        scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+                color=alt.Color('Make:N', legend=alt.Legend(title='Make')),
+                tooltip=[
+                    alt.Tooltip('Make:N', title='Make'),
+                    alt.Tooltip('car_age:Q', title='Age (Years)'),
+                    alt.Tooltip('avg_price:Q', format='$,.0f', title='Avg Price'),
+                    alt.Tooltip('sales_count:Q', title='Sales')
+                ]
+            ).properties(height=450)
+            st.altair_chart(line_dep, use_container_width=True)
+        else:
+            st.info("Not enough data to render depreciation curves.")
+
+    with tab6:
+        st.subheader("Price Distribution by Body Style")
+        st.caption(
+            "Each box shows the interquartile range of sale prices for that body style — the middle 50% of results. "
+            "The horizontal line inside each box is the median; whiskers extend to 1.5× the IQR. "
+            "Points beyond the whiskers are outliers. Body styles with fewer than 30 sales are excluded."
+        )
+
+        # Body Style column comes from dashboard_data.csv (added in dashboard_data.ipynb)
+        if 'Body Style' in df.columns:
+            df_style = df.dropna(subset=['Body Style'])
+
+            # Filter to body styles with sufficient sample sizes.
+            style_counts = df_style['Body Style'].value_counts()
+            valid_styles = style_counts[style_counts >= 30].index.tolist()
+            df_style = df_style[df_style['Body Style'].isin(valid_styles)]
+
+            # Median price per style used only for sort order on x-axis.
+            style_order = (
+                df_style.groupby('Body Style')['Sold_Price']
+                .median()
+                .sort_values(ascending=False)
+                .index.tolist()
+            )
+
+            box = alt.Chart(df_style).mark_boxplot(
+                color='#C4895A', outliers={'color': '#C4895A', 'opacity': 0.3, 'size': 20}
+            ).encode(
+                x=alt.X('Body Style:N', sort=style_order, title='',
+                        axis=alt.Axis(labelAngle=-30)),
+                y=alt.Y('Sold_Price:Q', title='Sale Price ($)',
+                        scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+                tooltip=[alt.Tooltip('Body Style:N', title='Body Style')]
+            ).properties(height=450)
+            st.altair_chart(box, use_container_width=True)
+        else:
+            st.info("Body Style data not yet available. Re-run dashboard_data.ipynb to add this column.")
