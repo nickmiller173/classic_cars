@@ -97,7 +97,7 @@ for k, v in _defaults.items():
         st.session_state[k] = v
 
 # header and intro copy
-st.title("🚗 Car Price Predictor")
+st.title("🚗 carsandbids.com: Car Price Predictor")
 st.markdown(
     "This tool uses a machine learning model that I trained on thousands of historical Cars & Bids auction results to estimate "
     "what a vehicle is likely to sell for at auction. I built this tool for two primary use cases:"
