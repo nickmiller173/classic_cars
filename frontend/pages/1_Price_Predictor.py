@@ -8,7 +8,7 @@ import os
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
 
 # page config and custom CSS
-st.set_page_config(page_title="carsandbids.com: Car Price Predictor", page_icon="🚗", layout="wide")
+st.set_page_config(page_title="Price Predictor", page_icon="🚗", layout="wide")
 
 st.markdown("""
 <style>

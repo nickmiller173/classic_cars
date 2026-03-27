@@ -151,7 +151,7 @@ with nav1:
             benchmarked against historical comps from comparable sales. This is the main part of the platform for buyers evaluating
             active listings and sellers setting realistic expectations.
         </p>
-        <a href="/Predictor" target="_self" class="nav-link">Price Predictor</a>
+        <a href="/Price_Predictor" target="_self" class="nav-link">Price Predictor</a>
         <a href="/Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
     </div>
     """, unsafe_allow_html=True)
@@ -165,8 +165,8 @@ with nav2:
             seasonal patterns, volume growth, and NLP(Natural Language Processing) derived insights on how listing language and
             condition descriptors correlate with final sale price.
         </p>
-        <a href="/Market_Dashboard" target="_self" class="nav-link">Market Dashboard</a>
-        <a href="/NLP_Insights" target="_self" class="nav-link">NLP Insights</a>
+        <a href="/Market_Trends" target="_self" class="nav-link">Market Trends</a>
+        <a href="/Text_Analysis" target="_self" class="nav-link">Text Analysis</a>
     </div>
     """, unsafe_allow_html=True)
 

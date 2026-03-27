@@ -3,7 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
-st.set_page_config(page_title="Market Dashboard", page_icon="📈", layout="wide")
+st.set_page_config(page_title="Auction Market Trends", page_icon="📈", layout="wide")
 
 st.markdown("""
 <style>
@@ -21,7 +21,7 @@ hr { border-color: #C4A882 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📈 Classic Car Market Trends")
+st.title("📈 Auction Market Trends")
 st.markdown("Explore macroeconomic trends and brand performance across the auction platform.")
 
 # data loading

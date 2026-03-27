@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="NLP Insights", page_icon="📝", layout="wide")
+st.set_page_config(page_title="Text Analysis", page_icon="📝", layout="wide")
 
 st.markdown("""
 <style>
