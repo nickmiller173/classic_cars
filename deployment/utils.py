@@ -3,10 +3,9 @@ import re
 from datetime import datetime
 import numpy as np
 
-# --- NEW FEATURE ENGINEERING LOGIC ---
-
 HIGH_VALUE_TRIM_PATTERN = r'\b(gt2|gt3|gt2rs|gt3rs|turbo-s|zr1|z06|hellcat|gt500|gt350|shelby|trd-pro|raptor|competition|black-series|gts-4)\b'
 
+# trim tier token sets
 _TRIM_ULTRA  = {'gt3', 'gt2', 'sto', 'evo', 'spider', 'g63', 'gtb'}
 _TRIM_HIGH   = {'turbo', 'gts', 'amg', 'z06', 'gt4', 'targa', 'spyder',
                 'cabriolet', 'cs', 'csl', 'demon', 'cyberbeast', '4s',
@@ -19,6 +18,12 @@ _TRIM_ECON   = {'club', 'standard', 'rwd', 'awd', 'plus', 'moke', 'sl', 'rf', 'n
 
 
 def assign_trim_tier(trim_slug):
+    # Tiers are ordered highest-to-lowest so a slug like 'gt3-turbo' is classified as
+    # ultra_premium (gt3 match) rather than high_performance (turbo match).
+    # ultra_premium: factory race/limited homologation trims (GT3, GT2, STO)
+    # high_performance: performance-oriented road variants (Turbo, AMG, Z06)
+    # sport_premium: enthusiast trims with significant upgrades (Hellcat, Raptor, GT500)
+    # economy: base/entry-level or naming tokens that carry no performance signal
     if pd.isna(trim_slug) or trim_slug == 'unknown':
         return 'unknown'
     if trim_slug == 'base':
@@ -83,7 +88,10 @@ def calculate_flaw_severity(row):
     flaws = str(row.get('Known Flaws', ''))
     notes = str(row.get('Seller Notes', ''))
     text = (flaws + " " + notes).lower()
-    
+
+    # Additive penalty: multiple flaw keywords accumulate, so a car with salvage title
+    # AND a fluid leak scores higher (worse) than one with only a minor scratch. Higher = more
+    # serious condition issues.
     score = 0
     # Tier 1: Catastrophic
     if re.search(r'\b(salvage|rebuilt|branded|flood|frame damage|rolled)\b', text): score += 50
@@ -98,6 +106,7 @@ def calculate_flaw_severity(row):
     
     return score
 
+# feature engineering
 def engineer_sharp_features(df):
     """
     Master function to generate all 'sharp' text features.
@@ -105,19 +114,17 @@ def engineer_sharp_features(df):
     """
     df = df.copy()
     
-    # 1. Ensure text columns exist (prevents crash on inference if JSON is incomplete)
-    text_cols = ['Highlights', 'Equipment', 'Modifications', 'Known Flaws', 
+    # Ensures missing columns don't crash inference when the JSON payload is incomplete
+    text_cols = ['Highlights', 'Equipment', 'Modifications', 'Known Flaws',
                  'Recent Service History', 'Ownership History', 'Seller Notes', 'Other Items Included in Sale']
-    
+
     for col in text_cols:
         if col not in df.columns:
             df[col] = ""
         df[col] = df[col].astype(str).fillna('').str.lower()
 
-    # Create a blob for broad searching
     df['full_text_blob'] = df[text_cols].apply(lambda x: ' '.join(x), axis=1)
 
-    # 2. Boolean Flags (The Multipliers)
     df['2_keys_ind'] = df['Other Items Included in Sale'].apply(
     lambda x: 1 if re.search(r'\b(2 keys|3 keys|both original keys|both keys)\b', x) else 0
     )
@@ -158,18 +165,15 @@ def engineer_sharp_features(df):
         lambda x: 1 if re.search(r'\b(carfax)\b', x) else 0
     )
 
-    # 3. Calculated Scores
     df['flaw_severity_score'] = df.apply(calculate_flaw_severity, axis=1)
 
-    # 4. Recent Maintenance (Capex)
     df['recent_major_service'] = df['Recent Service History'].apply(
         lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced)\b', x) else 0
     )
 
-    # 5. Categorical extraction
     df['mod_status'] = df['Modifications'].apply(categorize_mods)
 
-    # Drop the temporary blob to keep things clean
+    # Drop the blob so it doesn't leak into the model as a raw text column.
     df = df.drop(columns=['full_text_blob'])
     
     return df

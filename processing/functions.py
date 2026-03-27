@@ -11,6 +11,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.decomposition import TruncatedSVD
 
 
+# raw field cleaners
 def clean_currency(x):
     """
     Converts '$8,400' string to 8400.0 float.
@@ -18,12 +19,10 @@ def clean_currency(x):
     if pd.isna(x):
         return None
     if isinstance(x, str):
-        # Remove symbols
         x_clean = x.replace('$', '').replace(',', '').strip()
         try:
             return float(x_clean)
         except ValueError:
-            # If we can't convert it (e.g. it's text), return None
             return None
     return float(x)
 
@@ -47,89 +46,81 @@ def clean_model(x):
     return x.replace('\nSave', '').strip()
 
 def clean_and_group_title(x):
+    # Raw title strings have dozens of rare variants; grouping into ~6 buckets reduces cardinality
+    # so one-hot or ordinal encoding remains tractable for the model.
     if pd.isna(x):
-        return 'Unknown' 
-    
-    # Apply original split and strip, then lowercase to handle casing issues
+        return 'Unknown'
+
     val = str(x).split('(')[0].strip().lower()
-    
-    # 1. Clean Titles
+
     if val in ['clean', 'clen']:
         return 'Clean'
-    
-    # 2. Rebuilt / Salvage / Restored
+
     if any(keyword in val for keyword in ['rebuilt', 'salvage', 'reconstructed', 'totaled', 'restored']):
         return 'Rebuilt/Salvage'
-        
-    # 3. Mileage & Odometer Issues
+
     if any(keyword in val for keyword in ['mileage', 'odometer', 'mechanical limits']):
         return 'Mileage Issue'
-        
-    # 4. Lemon Law / Manufacturer Buyback
+
     if 'buyback' in val:
         return 'Buyback'
-        
-    # 5. Alternate Documentation (Bill of sale, Registered only, etc.)
+
     if val in ['bill of sale', 'no title', 'registered']:
         return 'Alternate Doc'
-        
-    # Catch-all for anything missed
+
     return 'Other'
 
 def clean_transmission_type(x):
     if pd.isna(x):
         return "Unknown"
         
-    # Split on parenthesis and strip trailing spaces
     val = str(x).split('(')[0].strip()
-    
+
     # Strictly enforce valid types to filter out the charity auction paragraphs
     if val in ['Automatic', 'Manual']:
         return val
         
     return 'Other'
 
+# extraction helpers
 def extract_gears(x):
     if pd.isna(x):
         return None
         
     x_str = str(x)
-    
-    # 1. Improved Regex: 
-    # (?i) makes it case-insensitive (catches "speed" and "Speed")
-    # [-\s] allows either a hyphen or a space
+
     match = re.search(r'(?i)(\d+)[-\s]speed', x_str)
-    
+
     if match:
         return float(match.group(1))
-        
-    # 2. Handle CVTs explicitly (usually coded as 1 gear for ML purposes)
+
+    # CVT has no discrete gear count; 1 is used as a sentinel so the column stays numeric
+    # and the model still sees CVT as clearly distinct from multi-speed automatics.
     if 'CVT' in x_str.upper():
         return 1.0
         
     return None
 
 def extract_engine_info(x):
-    # 1. Handle entirely missing/blank values
+    # Returns a tuple (displacement_liters, cylinder_config) because both dimensions
+    # carry independent predictive signal (e.g. a 3.0L I6 vs 3.0L V6 are meaningfully different).
     if pd.isna(x) or str(x).strip() == '':
-        return None, "Unknown"  # None for numeric, "Unknown" for categorical
-    
-    # --- Fix Displacement ---
+        return None, "Unknown"
+
     disp_l = re.search(r'(\d+\.?\d*)\s*L', x, re.IGNORECASE)
     disp_cc = re.search(r'(\d+)\s*cc', x, re.IGNORECASE)
     disp_ci = re.search(r'(\d+)\s*ci', x, re.IGNORECASE)
-    
-    # Default to None for missing numeric values
-    d_val = None 
+
+    d_val = None
+    # All units are normalized to liters so the model sees a single consistent numeric scale.
     if disp_l:
         d_val = float(disp_l.group(1))
     elif disp_cc:
-        d_val = round(float(disp_cc.group(1)) / 1000.0, 1) 
+        d_val = round(float(disp_cc.group(1)) / 1000.0, 1)
     elif disp_ci:
-        d_val = round(float(disp_ci.group(1)) / 61.0237, 1) 
-        
-    # --- Fix Cylinders ---
-    c_val = "Other" 
+        d_val = round(float(disp_ci.group(1)) / 61.0237, 1)
+
+    c_val = "Other"
     
     cyl = re.search(r'([VIW])[- ]?(\d+)', x, re.IGNORECASE)
     flat = re.search(r'Flat[- ]?(\d+)', x, re.IGNORECASE)
@@ -152,15 +143,13 @@ def extract_engine_info(x):
     return d_val, c_val
 
 def get_main_color(x):
-    # 1. Catch missing values and group them into "Other"
     if pd.isna(x):
         return "Other"
-        
-    # 2. Grab the primary color before slashes or " and "
+
     x = str(x).split('/')[0].split(' and ')[0].strip()
     x_lower = x.lower()
-    
-    # 3. Check for specific keywords FIRST to prevent substring collisions 
+
+    # Checked before standard colors to prevent substring collisions (e.g. "titanium" → Gray, not matched as "tan")
     special_map = {
         # Edge cases, Collisions & Exterior Bleed-over
         'titanium': 'Gray', 'titan': 'Black', 'mustang': 'Brown', 'tanzanite': 'Blue',
@@ -211,7 +200,6 @@ def get_main_color(x):
         if key in x_lower:
             return val
 
-    # 4. Check standard baseline colors
     std_colors = [
         'black', 'white', 'gray', 'grey', 'silver', 'red', 'blue', 
         'green', 'brown', 'beige', 'yellow', 'orange', 'gold', 'purple', 'tan'
@@ -220,27 +208,25 @@ def get_main_color(x):
     for color in std_colors:
         if color in x_lower:
             return 'Gray' if color == 'grey' else color.capitalize()
-            
-    # 5. Everything else becomes "Other"
+
     return "Other"
 
 def clean_seller_type(x):
     if pd.isna(x):
         return "Unknown"
-        
+
     val = str(x)
-    
-    # Consolidate all Dealer types (ignores doc fees, etc.)
+
     if 'Dealer' in val:
         return 'Dealer'
-        
-    # Consolidate all Private Party types (ignores liens, temporary tags, \n, etc.)
+
     elif 'Private Party' in val:
         return 'Private Party'
 
     else:
         return 'Other'
 
+# text / NLP feature helpers
 def categorize_mods(text):
     """Categorizes modification severity."""
     if pd.isna(text): return "stock"
@@ -282,19 +268,18 @@ def engineer_sharp_features(df):
     """
     df = df.copy()
     
-    # 1. Ensure text columns exist (prevents crash on inference if JSON is incomplete)
-    text_cols = ['Highlights', 'Equipment', 'Modifications', 'Known Flaws', 
+    # Ensures missing columns don't crash inference when the JSON payload is incomplete
+    text_cols = ['Highlights', 'Equipment', 'Modifications', 'Known Flaws',
                  'Recent Service History', 'Ownership History', 'Seller Notes', 'Other Items Included in Sale']
-    
+
     for col in text_cols:
         if col not in df.columns:
             df[col] = ""
         df[col] = df[col].astype(str).fillna('').str.lower()
 
-    # Create a blob for broad searching
+    # Temporary scratch column for cross-field keyword searches; dropped at the end of the pipeline.
     df['full_text_blob'] = df[text_cols].apply(lambda x: ' '.join(x), axis=1)
 
-    # 2. Boolean Flags (The Multipliers)
     df['2_keys_ind'] = df['Other Items Included in Sale'].apply(
     lambda x: 1 if re.search(r'\b(2 keys|3 keys|both original keys|both keys)\b', x) else 0
     )
@@ -335,19 +320,19 @@ def engineer_sharp_features(df):
         lambda x: 1 if re.search(r'\b(carfax)\b', x) else 0
     )
 
-    # 3. Calculated Scores
+    # Additive penalty score: higher values mean worse condition. Tiers are weighted by
+    # estimated repair cost severity, so catastrophic issues dominate minor cosmetic flaws.
     df['flaw_severity_score'] = df.apply(calculate_flaw_severity, axis=1)
 
-    # 4. Recent Maintenance (Capex)
     df['recent_major_service'] = df['Recent Service History'].apply(
         lambda x: 1 if re.search(r'\b(timing belt|clutch|ims|head gasket|water pump|transmission replaced|engine replaced)\b', x) else 0
     )
 
-    # 5. Categorical extraction
     df['mod_status'] = df['Modifications'].apply(categorize_mods)
-    
+
     return df
 
+# trim classification
 HIGH_VALUE_TRIM_PATTERN = r'\b(gt2|gt3|gt2rs|gt3rs|turbo-s|zr1|z06|hellcat|gt500|gt350|shelby|trd-pro|raptor|competition|black-series|gts-4)\b'
 
 # Token sets for assign_trim_tier — checked in priority order (first match wins)
@@ -426,6 +411,7 @@ def extract_performance_trim_flag(url):
     return 1 if re.search(HIGH_VALUE_TRIM_PATTERN, slug) else 0
 
 
+# date and derived features
 def clean_date(x):
     """
     Robustly extracts date from strings like 'Feb 18, 2026 1:48 PM MST'.
@@ -434,26 +420,22 @@ def clean_date(x):
     if pd.isna(x):
         return None
 
-    # NEW: If it's already a datetime or pandas Timestamp (from our sorting step), just return it
     if isinstance(x, datetime) or type(x).__name__ == 'Timestamp':
         return x
 
     x = str(x).strip()
 
-    # REGEX STRATEGY: Look for "Mmm DD, YYYY" pattern
-    # This matches "Feb 18, 2026" inside the longer string
     match = re.search(r'([A-Za-z]{3}\s+\d{1,2},\s+\d{4})', x)
 
     if match:
-        date_str = match.group(1) # "Feb 18, 2026"
+        date_str = match.group(1)
         try:
             return datetime.strptime(date_str, "%b %d, %Y")
         except ValueError:
             return None
 
-    # Fallback for ISO dates (2026-02-18) just in case
+    # Fallback for ISO dates
     try:
-        # Added .split(' ')[0] to safely strip off time if it exists in the string
         return datetime.strptime(x.split(' ')[0], "%Y-%m-%d")
     except ValueError:
         return None
@@ -465,7 +447,6 @@ def engineer_date_features(df, is_inference=False):
     """
     df = df.copy()
     
-    # 1. Date Parsing (Auction End Date)
     if 'Auction_Date' not in df.columns:
         df['Auction_Date'] = None
 
@@ -478,11 +459,12 @@ def engineer_date_features(df, is_inference=False):
     df['auction_year'] = df['date_obj'].dt.year
     df['auction_month'] = df['date_obj'].dt.month
     
-    # 2. Extract Model Year (The "THIS... is a 1998" Logic)
+    # model_year is pulled from the Highlights prose rather than the Year column because
+    # the Year column often reflects the auction year or is otherwise unreliable in the raw scrape.
     def extract_year_from_text(row):
         text = str(row.get('Highlights', ''))
-        
-        # Added \s* before the dots to catch spaces, and an? to catch "a" or "an"
+
+        # Matches "THIS… is a 1998" or "THIS... is an 2001" in the listing intro
         match = re.search(r'THIS\s*[…\.]+\s+is\s+an?\s+(\d{4})', text, re.IGNORECASE)
         
         if match:
@@ -492,16 +474,14 @@ def engineer_date_features(df, is_inference=False):
 
     df['model_year'] = df.apply(extract_year_from_text, axis=1)
 
-    # 3. Calculate "Age at Sale"
-    # If we still can't find the year, we default to the auction year (age=0) to prevent errors
+    # Falls back to auction year when the intro pattern isn't found, making car_age=0 rather than NaN
     df['model_year'] = df['model_year'].fillna(df['auction_year'])
-    
+
     df['car_age'] = df['auction_year'] - df['model_year']
-    
-    # Sanity Check: If age is negative (e.g. 2024 model sold in 2023), clamp to 0
+
+    # Clamp negatives for pre-production or early-release models sold before their model year
     df['car_age'] = df['car_age'].apply(lambda x: max(x, 0))
-        
-    # Cleanup — keep model_year as a feature (year-specific desirability for classics)
+
     df = df.drop(columns=['date_obj'])
     
     return df

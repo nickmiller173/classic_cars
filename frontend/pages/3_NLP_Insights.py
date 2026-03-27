@@ -24,7 +24,7 @@ hr { border-color: #C4A882 !important; }
 st.title("📝 Advanced Text Insights")
 st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, we can extract hidden themes that drive vehicle valuations on Cars & Bids.")
 
-# --- 1. Data Loading ---
+# data loading
 @st.cache_data
 def load_data(filename):
     file_path = f"../data/frontend_data/{filename}"
@@ -41,7 +41,7 @@ df_archetypes = load_data("nlp_archetypes.csv")
 df_effort = load_data("nlp_effort_scores.csv")
 df_buzzwords = load_data("nlp_buzzwords.csv")
 
-# --- 2. Setup Tabs ---
+# tab definitions
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "General Keywords", 
     "Aftermarket Brands", 
@@ -50,7 +50,6 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "Auction Buzzwords"
 ])
 
-# --- TAB 1: ORIGINAL KEYWORDS ---
 with tab1:
     st.subheader("General Keyword & Condition Flags")
     if not df_dashboard.empty:
@@ -68,13 +67,15 @@ with tab1:
             'recent_major_service': 'Recent Major Service (Timing Belt, etc.)'
         }
         
+        # compute per-feature price premiums
         results = []
         for col, readable_name in nlp_features.items():
             if col in df_dashboard.columns:
                 has_feature = df_dashboard[df_dashboard[col] == 1]['Sold_Price'].mean()
                 does_not_have = df_dashboard[df_dashboard[col] == 0]['Sold_Price'].mean()
                 
-                # Ensure we have valid data before doing math to prevent division by zero
+                # does_not_have > 0 guards against division by zero for rare binary flags where
+                # every listing in the dataset has the feature (making the "without" group empty).
                 if pd.notna(has_feature) and pd.notna(does_not_have) and does_not_have > 0:
                     percentage_premium = ((has_feature - does_not_have) / does_not_have) * 100
                     
@@ -119,7 +120,6 @@ with tab1:
                 }
             )
 
-# --- TAB 2: AFTERMARKET BRANDS ---
 with tab2:
     st.subheader("The ROI of Premium Aftermarket Brands")
     st.markdown("The following charts attempt to answer the question: Do buyers actually pay a premium for aftermarket parts? Here I try to show the financial impact of specific brands extracted from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text.")
@@ -140,6 +140,7 @@ with tab2:
         st.write("### Brand Exclusivity vs. Value Premium")
         st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it tends to command; the further right, the more commonly it shows up. Note: the premium reflects the average price of cars that happen to have that brand — expensive brands may simply show up on expensive cars regardless of whether they add value.")
         
+        # explode brand list and compute per-brand premium
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
         df_exploded = df_exploded[df_exploded['Extracted_Brands_List'] != '']
         df_exploded['Brand'] = df_exploded['Extracted_Brands_List'].str.split(', ')
@@ -150,6 +151,8 @@ with tab2:
             Total_Mentions=('Sold_Price', 'count')
         ).reset_index()
         
+        # Filter to brands with >2 mentions — a brand mentioned once or twice is likely a
+        # data entry quirk rather than a meaningful market signal, and it inflates the scatter.
         brand_impact = brand_impact[brand_impact['Total_Mentions'] > 2]
         # Calculate the premium as a percentage for the Y-Axis
         brand_impact['Premium_Pct'] = ((brand_impact['Average_Sale_Price'] - baseline_price) / baseline_price) * 100
@@ -170,7 +173,6 @@ with tab2:
         
         st.altair_chart(scatter + text, use_container_width=True)
 
-# --- TAB 3: LISTING ARCHETYPES ---
 with tab3:
     st.subheader("The Four Hidden Car Archetypes")
     st.markdown("The charts below show an attempt at clustering cars into categories using only rich text fields. Using Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes")
@@ -184,6 +186,7 @@ with tab3:
         }
         df_archetypes['Archetype'] = df_archetypes['Archetype_Cluster'].map(cluster_mapping)
         
+        # aggregate archetype stats for charts
         arch_summary = df_archetypes.groupby("Archetype").agg(
             Average_Price=('Sold_Price', 'mean'),
             Market_Share=('Sold_Price', 'count')
@@ -216,8 +219,6 @@ with tab3:
             )
             st.altair_chart(bar, use_container_width=True)
 
-# --- TAB 4: COMPREHENSIVENESS ---
-# --- TAB 4: SECTION-SPECIFIC DETAIL ---
 with tab4:
     st.subheader("Head-to-Head comparison of listing text length")
     st.markdown("The following charts attempt to answer the question: Does writing a longer description always help? You can use the dropdowns below to compare how word count in different sections impacts the final sale price.")
@@ -240,10 +241,12 @@ with tab4:
         
         # Updated to dynamically zoom by dropping the top 5% extreme outliers
         def build_scatter_trend(x_col, x_title, line_color):
-            # Calculate the 95th percentile for this specific metric and price
+            # Cap at the 95th percentile for both axes independently so that a single listing
+            # with 2,000 words or a $500k sale doesn't compress the entire visible chart into
+            # a corner — the trendline still fits all data but the view focuses on the main mass.
             x_cap = df_effort[x_col].quantile(0.95)
             y_cap = df_effort['Sold_Price'].quantile(0.95)
-            
+
             # Create a localized dataframe that drops the extreme outliers
             zoomed_df = df_effort[(df_effort[x_col] <= x_cap) & (df_effort['Sold_Price'] <= y_cap)]
             
@@ -269,7 +272,6 @@ with tab4:
             section_2 = st.selectbox("Select Second Section", options=list(wc_columns.keys()), format_func=lambda x: wc_columns[x], index=1) 
             st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#8B3A3A'), use_container_width=True)
 
-# --- TAB 5: AUCTION BUZZWORDS ---
 with tab5:
     st.subheader("The 'Auction Buzzword' Impact Analyzer")
     st.markdown("Which specific words or phrases extracted from the text are most associated with high or low sale prices?")
@@ -282,7 +284,8 @@ with tab5:
         top_discount = df_buzzwords[df_buzzwords['Impact_Value'] < 0].nsmallest(15, 'Impact_Value')
         
         combined_buzzwords = pd.concat([top_premium, top_discount])
-        
+
+        # render horizontal bar chart
         buzz_bar = alt.Chart(combined_buzzwords).mark_bar().encode(
             x=alt.X('Impact_Value:Q', title="Avg Price Difference vs. Listings Without This Word ($)"),
             y=alt.Y('Word:N', sort='-x', title="",

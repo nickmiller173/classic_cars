@@ -57,7 +57,7 @@ df_pdp = load_pdp_data()
 
 st.title("📈 Prediction Analysis")
 
-# --- RESIDUAL ANALYSIS ---
+# residual scatter
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
     "Each point represents a car from the test data set, plotted by the model's estimate against the actual sale price. "
@@ -80,6 +80,8 @@ if not df_residuals.empty:
                  alt.Tooltip('Predicted_Price:Q', format='$,.0f', title='Predicted')]
     )
 
+    # The diagonal is the "perfect prediction" line (predicted == actual). Points above it
+    # sold for more than the model expected; points below sold for less.
     diagonal = alt.Chart(
         pd.DataFrame({'x': [0, max_val], 'y': [0, max_val]})
     ).mark_line(color='black', strokeDash=[5, 5]).encode(x='x:Q', y='y:Q')
@@ -90,7 +92,7 @@ else:
 
 st.divider()
 
-# --- SHAP GLOBAL FEATURE IMPORTANCE ---
+# feature importance
 st.subheader("2. Feature Importance (SHAP Values)")
 st.markdown(
     "Bar length reflects each variables's average absolute SHAP value across the test set. SHAP is a model-agnostic measure of "
@@ -101,6 +103,9 @@ st.markdown(
 )
 
 if not df_shap.empty:
+    # mean_abs_shap is the average of |SHAP value| across all test samples for each feature.
+    # It measures how much that feature moves the prediction on average, regardless of direction
+    # (a feature that sometimes adds $5k and sometimes subtracts $5k still has a large mean abs SHAP).
     fig_shap = alt.Chart(df_shap).mark_bar(color='#C4895A').encode(
         x=alt.X('mean_abs_shap:Q', title='Mean Absolute SHAP Value (log $)'),
         y=alt.Y('feature:N', sort='-x', title=None, axis=alt.Axis(labelLimit=400)),
@@ -112,7 +117,7 @@ else:
 
 st.divider()
 
-# --- PDP PLOTS ---
+# partial dependence
 st.subheader("3. Marginal Price Effects (Partial Dependence)")
 st.markdown(
     "Partial dependence plots isolate the relationship between a single feature and the predicted price by averaging "
@@ -123,6 +128,10 @@ st.markdown(
 )
 
 if not df_pdp.empty:
+    # PDP shows the marginal effect of one variable by averaging out all others —
+    # it answers "if only this input changed, how would the predicted price move?"
+    # SHAP above answers a different question: "how much did each variable actually
+    # contribute to this specific prediction, accounting for all feature interactions?"
     features = sorted(df_pdp['Feature'].unique())
     selected_feature = st.selectbox("Select a Variable to Analyze:", features)
 

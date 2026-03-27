@@ -24,6 +24,7 @@ hr { border-color: #C4A882 !important; }
 st.title("📈 Classic Car Market Trends")
 st.markdown("Explore macroeconomic trends and brand performance across the auction platform.")
 
+# data loading
 @st.cache_data
 def load_full_data():
     file_path = "../data/frontend_data/dashboard_data.csv"
@@ -33,6 +34,7 @@ def load_full_data():
 
 df = load_full_data()
 
+# tab definitions
 if not df.empty:
     tab0, tab1, tab2, tab3, tab4 = st.tabs([
         "Market Overview",
@@ -42,7 +44,6 @@ if not df.empty:
         "Model Year Sweet Spot"
     ])
 
-    # --- TAB 0: MARKET OVERVIEW ---
     with tab0:
         st.subheader("Platform-Wide Market Overview")
 
@@ -66,6 +67,7 @@ if not df.empty:
         )
         st.altair_chart(line_overview, use_container_width=True)
 
+        # average price by make (top and bottom 10)
         make_avg = df.groupby('Make')['Sold_Price'].agg(
             avg_price='mean', sales_count='count'
         ).reset_index()
@@ -103,12 +105,13 @@ if not df.empty:
         )
         st.altair_chart(bar_bottom, use_container_width=True)
 
-    # --- TAB 1: MAKE/MODEL PRICE OVER TIME ---
     with tab1:
         st.subheader("Price Trend by Make & Model")
         st.caption("Select a specific make and model to see how average sale prices have moved over time — great for spotting cars that are appreciating or cooling off.")
 
-        # Pre-compute valid combos: only show make/model pairs with at least 3 months having ≥2 sales
+        # Pre-compute valid combos: only show make/model pairs with at least 3 months having ≥2 sales.
+        # The ≥3 qualifying months threshold prevents thin datasets from generating erratic single-point
+        # "trend" lines — a model needs a meaningful sales history to produce a readable chart.
         month_counts = df.groupby(['Make', 'Model', 'auction_year', 'auction_month']).size().reset_index(name='n')
         valid_trend_combos = (
             month_counts[month_counts['n'] >= 2]
@@ -136,7 +139,8 @@ if not df.empty:
             trend['auction_year'].astype(str) + '-' + trend['auction_month'].astype(str) + '-01'
         )
         trend = trend.sort_values('Date')
-        # Filter out months with only 1 sale — single outlier auctions create very noisy lines
+        # A single sale in a month means its price IS the average — one unusual result can
+        # create a large spike or dip that misleads the reader about the real trend.
         trend = trend[trend['sales_count'] >= 2]
 
         if not trend.empty:
@@ -154,7 +158,6 @@ if not df.empty:
         else:
             st.info("Not enough monthly data to draw a trend for this model. Try a more commonly sold make/model.")
 
-    # --- TAB 2: SALES VOLUME OVER TIME ---
     with tab2:
         st.subheader("Sales Volume Over Time")
         st.caption("How many cars sold per month across the whole platform — a direct read on whether the site is growing and which seasons see the most listing activity.")
@@ -175,7 +178,6 @@ if not df.empty:
         )
         st.altair_chart(bar, use_container_width=True)
 
-    # --- TAB 3: PRICE HEATMAP ---
     with tab3:
         st.subheader("Price Heatmap by Month & Year")
         st.caption("Each cell shows the average sale price for that month and year — darker teal means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time.")
@@ -205,12 +207,13 @@ if not df.empty:
 
         st.altair_chart(heatmap, use_container_width=True)
 
-    # --- TAB 4: MODEL YEAR SWEET SPOT ---
     with tab4:
         st.subheader("Model Year Sweet Spot")
         st.caption("Pick a make and model to see which production years command the highest average prices — useful for pinpointing the exact vintage buyers are willing to pay a premium for.")
 
-        # Pre-compute valid combos: only show make/model pairs where at least 2 model years have ≥3 sales
+        # Pre-compute valid combos: require at least 2 model years with ≥3 sales each.
+        # A single qualifying model year produces a one-bar chart with nothing to compare against,
+        # so the ≥2 year threshold ensures the sweet spot chart always shows a meaningful comparison.
         year_counts = df.groupby(['Make', 'Model', 'Year']).size().reset_index(name='n')
         valid_combos = (
             year_counts[year_counts['n'] >= 3]
@@ -228,6 +231,7 @@ if not df.empty:
             valid_models_t4 = sorted(valid_combos[valid_combos['Make'] == selected_make_t4]['Model'].unique())
             selected_model_t4 = st.selectbox("Model", valid_models_t4, key='tab4_model')
 
+        # aggregate by model year
         make_df = df[(df['Make'] == selected_make_t4) & (df['Model'] == selected_model_t4)]
         year_avg = make_df.groupby('Year')['Sold_Price'].agg(
             avg_price='mean', sales_count='count'

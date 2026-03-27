@@ -3,6 +3,7 @@ import pandas as pd
 import altair as alt
 import os
 
+# page config and custom CSS
 st.set_page_config(page_title="Cars & Bids Price Intelligence", page_icon="🚗", layout="wide")
 
 st.markdown("""
@@ -39,9 +40,12 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 
+# data loading
 @st.cache_data
 def load_data():
-    # Prefer cleaned_data_no_encoding (full dataset, pre-price-floor) — falls back to dashboard_data
+    # cleaned_data_no_encoding is the full, unmodified dataset used for hero stats (total auctions, GMV, median price).
+    # It is preferred here because dashboard_data has a price floor applied, which would skew aggregate figures.
+    # Falls back to dashboard_data when running from a deploy environment where only that file is present.
     for path in [
         "../data/frontend_data/cleaned_data_no_encoding.csv",
         "data/frontend_data/cleaned_data_no_encoding.csv",
@@ -54,6 +58,8 @@ def load_data():
 
 @st.cache_data
 def load_dashboard_data():
+    # dashboard_data is loaded separately so the market signals section (emissions premium, two-keys premium)
+    # uses the same filtered dataset as the NLP Insights page — keeping the numbers consistent across pages.
     for path in [
         "../data/frontend_data/dashboard_data.csv",
         "data/frontend_data/dashboard_data.csv",
@@ -75,7 +81,7 @@ elif 'auction_year' in df.columns and 'auction_month' in df.columns:
 else:
     data_through = None
 
-# ── HEADER ────────────────────────────────────────────────────────────────────
+# header and intro copy
 st.title("🚗 Cars & Bids Price Intelligence")
 st.markdown(
     "I built this platform because, like most of the Cars & Bids community, I love tracking the prices "
@@ -96,7 +102,7 @@ if data_through:
 
 st.divider()
 
-# ── HERO METRICS ──────────────────────────────────────────────────────────────
+# hero metrics
 m1, m2, m3, m4, m5 = st.columns(5)
 
 total_auctions = len(df)
@@ -107,6 +113,8 @@ makes_count = df['Make'].nunique()
 oldest_row = df.loc[df['Year'].idxmin()]
 oldest_label = f"{int(oldest_row['Year'])} {oldest_row['Make']}"
 
+# metric_card renders a styled HTML card instead of st.metric because st.metric doesn't
+# support a subtitle line, and the CSS injection for stMetric only styles the native widget.
 def metric_card(label, value, subtitle=None):
     sub = f'<div style="font-size:14px; color:#6b7280; margin:4px 0 0 0;">{subtitle}</div>' if subtitle else ''
     return f"""
@@ -130,7 +138,7 @@ with m5:
 
 st.divider()
 
-# ── NAVIGATION CARDS ─────────────────────────────────────────────────────────
+# navigation cards
 st.markdown("#### Explore the Platform")
 nav1, nav2 = st.columns(2)
 
@@ -164,7 +172,7 @@ with nav2:
 
 st.divider()
 
-# ── CHARTS ────────────────────────────────────────────────────────────────────
+# preview charts
 if not df.empty:
     st.markdown("#### 📊 A Glimpse of the Data")
     st.caption("The charts below are a small sample of the market intelligence available across the platform. Explore the full analysis in the sections above.")
@@ -190,6 +198,7 @@ if not df.empty:
         st.markdown("#### Sample Insights")
         st.caption("Behavioral patterns extracted from listing text and sale outcomes across the full dataset.")
 
+        # Use df_dashboard (not df) so these percentages match the NLP Insights page, which also uses dashboard_data.
         _sig = df_dashboard if not df_dashboard.empty else df
         emissions_premium = (
             _sig[_sig['emissions_ind'] == 1]['Sold_Price'].mean() /

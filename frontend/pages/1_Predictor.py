@@ -5,9 +5,9 @@ import pandas as pd
 import altair as alt
 import os
 
-# --- CONFIGURATION ---
 API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
 
+# page config and custom CSS
 st.set_page_config(page_title="carsandbids.com: Car Price Predictor", page_icon="🚗", layout="wide")
 
 st.markdown("""
@@ -30,7 +30,7 @@ hr { border-color: #C4A882 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-# --- DATA LOADING ---
+# data loading
 @st.cache_data
 def load_car_data():
     file_path = "../data/frontend_data/dropdown_options.csv"
@@ -58,10 +58,12 @@ def load_historical_averages():
 
 df_history = load_historical_averages()
 
-# --- SESSION STATE DEFAULTS ---
-# Simple inputs use key= directly. Cascading dropdowns are managed manually
-# because their options list changes and Streamlit errors if a stored value
-# isn't in the new list.
+# session state defaults
+# Simple, static inputs use key= so Streamlit manages their state automatically.
+# Cascading dropdowns (make → model → year → trim → ...) are managed manually
+# via session_state reads/writes instead, because Streamlit throws a ValueError
+# if the widget's key holds a value that no longer exists in the new options list
+# (e.g., switching make would leave a stale model stored under key=).
 _defaults = {
     'pred_make': 'Porsche',
     'pred_model': '996 911',
@@ -94,7 +96,7 @@ for k, v in _defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
 
-# --- UI HEADER ---
+# header and intro copy
 st.title("🚗 Car Price Predictor")
 st.markdown(
     "This tool uses a machine learning model that I trained on thousands of historical Cars & Bids auction results to estimate "
@@ -109,7 +111,7 @@ st.markdown(
 )
 st.divider()
 
-# --- VEHICLE SPECS ---
+# vehicle specs form
 st.subheader("🛠️ 1. Vehicle Specifications")
 col1, col2, col3 = st.columns(3)
 
@@ -130,7 +132,9 @@ with col1:
         make = st.text_input("Make", value="Porsche")
         model = st.text_input("Model", value="996 911")
 
-# Instantiate spec_df early
+# spec_df must be created here, outside of any column block, so that col2 and col3
+# can filter it further as the user selects drivetrain, body style, transmission, etc.
+# If this were inside the col1 block, it would be out of scope when col2/col3 render.
 if not df_cars.empty:
     spec_df = df_cars[(df_cars['Make'] == make) & (df_cars['Model'] == model)]
 else:
@@ -147,7 +151,6 @@ with col1:
         year = st.number_input("Year", min_value=1925, max_value=2025, value=st.session_state['pred_year'])
     st.session_state['pred_year'] = year
 
-    # 1. CASCADE: Filter by Year
     if not spec_df.empty and 'Year' in spec_df.columns:
         spec_df = spec_df[spec_df['Year'] == year]
 
@@ -192,7 +195,6 @@ with col2:
     drivetrain = st.selectbox("Drivetrain", drivetrains, index=dt_idx)
     st.session_state['pred_drivetrain'] = drivetrain
 
-    # 2. CASCADE: Filter by Drivetrain
     if not spec_df.empty and 'Drivetrain' in spec_df.columns:
         spec_df = spec_df[spec_df['Drivetrain'] == drivetrain]
 
@@ -204,7 +206,6 @@ with col3:
     body_style = st.selectbox("Body Style", body_styles, index=bs_idx)
     st.session_state['pred_body_style'] = body_style
 
-    # 3. CASCADE: Filter by Body Style
     if not spec_df.empty and 'Body Style' in spec_df.columns:
         spec_df = spec_df[spec_df['Body Style'] == body_style]
 
@@ -215,7 +216,6 @@ with col3:
     transmission = st.selectbox("Transmission", transmissions, index=tx_idx)
     st.session_state['pred_transmission'] = transmission
 
-    # 4. CASCADE: Filter by Transmission
     if not spec_df.empty and 'Transmission_Type' in spec_df.columns:
         spec_df = spec_df[spec_df['Transmission_Type'] == transmission]
 
@@ -226,7 +226,6 @@ with col3:
     engine_cyl = st.selectbox("Cylinders", engine_cyls, index=cyl_idx)
     st.session_state['pred_engine_cyl'] = engine_cyl
 
-    # 5. CASCADE: Filter by Cylinders
     if not spec_df.empty and 'Engine_Cylinders' in spec_df.columns:
         spec_df = spec_df[spec_df['Engine_Cylinders'] == engine_cyl]
 
@@ -235,7 +234,6 @@ with col3:
         saved_disp = st.session_state['pred_displacement']
         disp_idx = disp_opts.index(saved_disp) if saved_disp in disp_opts else 0
         displacement = st.selectbox("Engine Displacement (L) [0 for EV]", disp_opts, index=disp_idx)
-        # 6. CASCADE: Filter by Displacement
         if not spec_df.empty:
             spec_df = spec_df[spec_df['Engine_Displacement_L'] == displacement]
     else:
@@ -254,7 +252,7 @@ with col3:
 
 st.divider()
 
-# --- AUCTION TEXT ---
+# auction text form
 st.subheader("📝 2. Auction Description")
 st.info(
     "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, "
@@ -288,7 +286,7 @@ with st.expander("Click to expand and paste auction text blocks", expanded=True)
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# --- SUBMISSION LOGIC ---
+# submission and API call
 submitted = st.button("💰 Predict Market Price", type="primary", use_container_width=True)
 
 if submitted:
@@ -321,7 +319,8 @@ if submitted:
 
     with st.spinner("Analyzing data and communicating with AWS Lambda..."):
         try:
-            # --- 1. Get Prediction from Lambda (with cold-start retry) ---
+            # timeout=90 accommodates Lambda cold starts, which can take 30–60 s when the
+            # function hasn't been invoked recently. A shorter timeout would false-fail on warm-up.
             response = requests.post(API_URL, json=payload, timeout=90)
             if response.status_code == 503:
                 st.toast("Model is warming up — retrying...", icon="⏳")
@@ -341,7 +340,7 @@ if submitted:
             else:
                 st.error(f"Error {response.status_code}: {response.text}")
 
-            # --- 2. Calculate Historical Average with Fallbacks ---
+            # historical comp lookup
             historical_avg = None
             historical_count = 0
             match_level = "No historical data found"
@@ -351,6 +350,9 @@ if submitted:
             if not df_history.empty:
                 target_col = 'Sold_Price'
 
+                # Fallback order goes from most specific to least specific so the user always
+                # gets the tightest available comp set — only widening the search when no
+                # records match the more precise criteria.
                 fallback_filters = [
                     {"name": "Make, Model, Year, Trans", "conditions": [('Make', make), ('Model', model), ('Year', year), ('Transmission_Type', transmission)]},
                     {"name": "Make, Model, Year", "conditions": [('Make', make), ('Model', model), ('Year', year)]},
@@ -373,7 +375,8 @@ if submitted:
                         matching_cars_df = temp_df
                         break
 
-            # Store results in session state so they persist across page navigation
+            # Storing in session_state means the prediction output survives if the user
+            # navigates away and returns, without needing to re-submit the form.
             if price > 0:
                 st.session_state['pred_results'] = {
                     'price': price,
@@ -387,7 +390,7 @@ if submitted:
         except Exception as e:
             st.error(f"Connection failed: {e}")
 
-# --- 3. Display Results (rendered from session state so they survive page navigation) ---
+# results display
 if 'pred_results' in st.session_state:
     r = st.session_state['pred_results']
     price = r['price']
