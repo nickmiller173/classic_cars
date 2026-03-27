@@ -360,7 +360,9 @@ if not df.empty:
         st.caption(
             "Each box shows the interquartile range of sale prices for that body style — the middle 50% of results. "
             "The horizontal line inside each box is the median; whiskers extend to 1.5× the IQR. "
-            "Points beyond the whiskers are outliers. Body styles with fewer than 30 sales are excluded."
+            "Points beyond the whiskers are outliers. The y-axis is capped at the 99th percentile so extreme "
+            "outliers don't compress the boxes — a small number of very high-value sales exist beyond the visible range. "
+            "Body styles with fewer than 30 sales are excluded."
         )
 
         # Body Style column comes from dashboard_data.csv (added in dashboard_data.ipynb)
@@ -380,13 +382,19 @@ if not df.empty:
                 .index.tolist()
             )
 
+            # Cap y-axis at the 99th percentile so extreme outliers don't compress the boxes
+            # into an unreadable sliver. clamp=True keeps outlier dots visible at the cap
+            # rather than dropping them from the chart entirely.
+            y_max = df_style['Sold_Price'].quantile(0.99)
+
             box = alt.Chart(df_style).mark_boxplot(
                 color='#C4895A', outliers={'color': '#C4895A', 'opacity': 0.3, 'size': 20}
             ).encode(
                 x=alt.X('Body Style:N', sort=style_order, title='',
                         axis=alt.Axis(labelAngle=-30)),
                 y=alt.Y('Sold_Price:Q', title='Sale Price ($)',
-                        scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
+                        scale=alt.Scale(zero=False, domainMax=y_max, clamp=True),
+                        axis=alt.Axis(format='$,.0f')),
                 tooltip=[alt.Tooltip('Body Style:N', title='Body Style')]
             ).properties(height=450)
             st.altair_chart(box, use_container_width=True)
