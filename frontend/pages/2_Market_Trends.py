@@ -193,9 +193,8 @@ if not df.empty:
 
     with tab3:
         st.subheader("Price Heatmap by Month & Year")
-        st.caption("Each cell shows the average sale price for that month and year — darker teal means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time.
-        When I read this chart the biggest thing that sticks out is how there is a serious increase in average sale price starting in
-         2022. This could be due to the site gain traction and momentum after being established for a year and a half.")
+        st.caption("Each cell shows the average sale price for that month and year — darker teal means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time. "
+                   "The biggest thing that sticks out is the serious increase in average sale price starting in 2022, likely as the site gained traction and momentum after being established for a year and a half.")
 
         month_labels = {
             1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
