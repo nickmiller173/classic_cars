@@ -175,7 +175,7 @@ st.divider()
 # preview charts
 if not df.empty:
     st.markdown("#### 📊 A Glimpse of the Data")
-    st.caption("The charts below are a small sample of the market intelligence available across the platform. Explore the full analysis in the sections above.")
+    st.caption("The charts below are a small sample of the market intelligence available across the platform. You can explore the full analysis in the sections above.")
 
     col_vol, col_stat = st.columns([2, 1])
 
