@@ -24,6 +24,14 @@ hr { border-color: #C4A882 !important; }
 st.title("📝 Advanced Text Insights")
 st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, we can extract hidden themes that drive vehicle valuations on Cars & Bids.")
 
+st.info(
+        "A general note: these figures show **correlation, not causation.** Each bar reflects the average price difference between "
+        "listings that mention a feature and those that don't. It does not mean the feature itself drives the price. "
+        "A negative bar for 'Single Owner History', for example, doesn't mean single ownership hurts value. It would "
+        "likely means that single-owner cars on this platform tend to be older with lower market prices than "
+        "the multi-owner modern performance cars that dominate the high end of the price range."
+    )
+
 # data loading
 @st.cache_data
 def load_data(filename):
@@ -52,14 +60,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 with tab1:
     st.subheader("General Keyword & Condition Flags")
-    st.info(
-        "**These figures show correlation, not causation.** Each bar reflects the average price difference between "
-        "listings that mention a feature and those that don't — it does not mean the feature itself drives the price. "
-        "A negative bar for 'Single Owner History', for example, doesn't mean single ownership hurts value. It more "
-        "likely means that single-owner cars on this platform tend to be older classics with lower market prices than "
-        "the multi-owner modern performance cars that dominate the high end of the price range. Always ask *what kind "
-        "of car tends to have this characteristic* before drawing conclusions from these numbers."
-    )
+    
     if not df_dashboard.empty:
         # Expanded dictionary to include all engineered text features from functions.py
         nlp_features = {
