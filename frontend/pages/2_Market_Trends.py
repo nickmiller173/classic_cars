@@ -107,7 +107,12 @@ if not df.empty:
 
     with tab1:
         st.subheader("Price Trend by Make & Model")
-        st.caption("Select a specific make and model to see how average sale prices have moved over time — great for spotting cars that are appreciating or cooling off.")
+        st.caption(
+            "Select a make and model to see how average sale prices have moved over time. Use the optional model year "
+            "filter to isolate a specific vintage — useful for separating, say, a 1990s air-cooled 911 from a modern one. "
+            "Note that filtering to a single model year can produce a sparse or empty chart for less commonly sold cars, "
+            "since months with fewer than 2 sales of that exact vintage are excluded to avoid misleading single-point spikes."
+        )
 
         # Pre-compute valid combos: only show make/model pairs with at least 3 months having ≥2 sales.
         # The ≥3 qualifying months threshold prevents thin datasets from generating erratic single-point
@@ -121,7 +126,7 @@ if not df.empty:
         )
         valid_trend_combos = valid_trend_combos[valid_trend_combos['qualifying_months'] >= 3]
 
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
             valid_makes_t1 = sorted(valid_trend_combos['Make'].unique())
             default_make_idx = valid_makes_t1.index('Tesla') if 'Tesla' in valid_makes_t1 else 0
@@ -130,8 +135,16 @@ if not df.empty:
             valid_models_t1 = sorted(valid_trend_combos[valid_trend_combos['Make'] == selected_make]['Model'].unique())
             default_model_idx = valid_models_t1.index('Cybertruck') if 'Cybertruck' in valid_models_t1 else 0
             selected_model = st.selectbox("Model", valid_models_t1, index=default_model_idx)
+        with col3:
+            # Optional model year filter — defaults to All Years to ensure the chart always has data.
+            available_years = sorted(df[(df['Make'] == selected_make) & (df['Model'] == selected_model)]['Year'].dropna().unique().tolist(), reverse=True)
+            year_options = ['All Years'] + [int(y) for y in available_years]
+            selected_year = st.selectbox("Model Year (optional)", year_options)
 
         filtered = df[(df['Make'] == selected_make) & (df['Model'] == selected_model)]
+        if selected_year != 'All Years':
+            filtered = filtered[filtered['Year'] == selected_year]
+
         trend = filtered.groupby(['auction_year', 'auction_month'])['Sold_Price'].agg(
             avg_price='mean', sales_count='count'
         ).reset_index()
@@ -156,7 +169,7 @@ if not df.empty:
             )
             st.altair_chart(line, use_container_width=True)
         else:
-            st.info("Not enough monthly data to draw a trend for this model. Try a more commonly sold make/model.")
+            st.info("Not enough monthly data to draw a trend for this selection. Try selecting 'All Years' or a more commonly sold model year.")
 
     with tab2:
         st.subheader("Sales Volume Over Time")
