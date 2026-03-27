@@ -233,3 +233,6 @@ if not df.empty:
         </div>
         """, unsafe_allow_html=True)
 
+st.divider()
+st.caption("For the full technical details of this project — including the data pipeline, model architecture, AWS infrastructure, and design decisions — please see the [README](https://github.com/nickmiller173/classic_cars/blob/main/README.md).")
+
