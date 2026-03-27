@@ -56,6 +56,15 @@ df_residuals = load_residual_data()
 df_pdp = load_pdp_data()
 
 st.title("📈 Prediction Analysis")
+st.markdown(
+    "This page provides a transparent look at how the price predictor model works and how well it performs. "
+    "The predictor you used on the previous page is an XGBoost machine learning model trained on thousands of "
+    "historical Cars & Bids auction results. Rather than taking that estimate on faith, the charts below let you "
+    "examine the model's accuracy, understand which inputs it relies on most heavily, and see how individual "
+    "variables influence the predicted price. If you ever wonder why the predictor returned a certain number, "
+    "this page is where to look."
+)
+st.divider()
 
 # residual scatter
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
