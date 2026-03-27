@@ -147,9 +147,9 @@ with nav1:
     <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
         <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
         <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
-            Enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
-            benchmarked against historical comps from comparable sales. Built for buyers evaluating active listings
-            and sellers setting realistic expectations.
+            Here you can enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
+            benchmarked against historical comps from comparable sales. This is the main part of the platform for buyers evaluating
+            active listings and sellers setting realistic expectations.
         </p>
         <a href="/Predictor" target="_self" class="nav-link">Price Predictor</a>
         <a href="/Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
@@ -161,9 +161,9 @@ with nav2:
     <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
         <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
         <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
-            Exploratory analysis of the full auction dataset — price trends by make and model, seasonal patterns,
-            volume growth, and NLP-derived insights on how listing language and condition descriptors
-            correlate with final sale price.
+            Here you can find exploratory analysis of the full auction dataset. Some examples are: price trends by make and model,
+            seasonal patterns, volume growth, and NLP(Natural Language Processing) derived insights on how listing language and
+            condition descriptors correlate with final sale price.
         </p>
         <a href="/Market_Dashboard" target="_self" class="nav-link">Market Dashboard</a>
         <a href="/NLP_Insights" target="_self" class="nav-link">NLP Insights</a>
@@ -175,13 +175,13 @@ st.divider()
 # preview charts
 if not df.empty:
     st.markdown("#### 📊 A Glimpse of the Data")
-    st.caption("The charts below are a small sample of the market intelligence available across the platform. You can explore the full analysis in the sections above.")
+    st.caption("The charts below are a small sample of the market intelligence available across the platform. You can explore the full analysis by clicking on the links in the sections above or on the side bar menu")
 
     col_vol, col_stat = st.columns([2, 1])
 
     with col_vol:
         st.markdown("#### Auction Volume by Year")
-        st.caption("Annual listing volume reflects the platform's rapid growth since its 2020 launch.")
+        st.caption("Looking at the annual listing volume, you can see Cars & Bids rapid growth since its 2020 launch.")
 
         vol = df.groupby('auction_year').size().reset_index(name='count')
         vol_chart = alt.Chart(vol).mark_bar(color='#8B5E3C').encode(
@@ -196,7 +196,7 @@ if not df.empty:
 
     with col_stat:
         st.markdown("#### Sample Insights")
-        st.caption("Behavioral patterns extracted from listing text and sale outcomes across the full dataset.")
+        st.caption("Here are some example insights extracted from listing text and sale outcomes across the full dataset.")
 
         # Use df_dashboard (not df) so these percentages match the NLP Insights page, which also uses dashboard_data.
         _sig = df_dashboard if not df_dashboard.empty else df

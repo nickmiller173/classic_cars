@@ -22,12 +22,12 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 st.title("📝 Advanced Text Insights")
-st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, we can extract hidden themes that drive vehicle valuations on Cars & Bids.")
+st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, I was able to extract hidden themes that may drive vehicle valuations on Cars & Bids.")
 
 st.info(
         "A general note: these figures show **correlation, not causation.** Each bar reflects the average price difference between "
         "listings that mention a feature and those that don't. It does not mean the feature itself drives the price. "
-        "A negative bar for 'Single Owner History', for example, doesn't mean single ownership hurts value. It would "
+        "A negative bar for 'Single Owner History', for example, doesn't mean single ownership hurts value. It "
         "likely means that single-owner cars on this platform tend to be older with lower market prices than "
         "the multi-owner modern performance cars that dominate the high end of the price range."
     )
