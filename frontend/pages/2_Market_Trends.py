@@ -129,11 +129,11 @@ if not df.empty:
         col1, col2, col3 = st.columns(3)
         with col1:
             valid_makes_t1 = sorted(valid_trend_combos['Make'].unique())
-            default_make_idx = valid_makes_t1.index('Tesla') if 'Tesla' in valid_makes_t1 else 0
+            default_make_idx = valid_makes_t1.index('BMW') if 'BMW' in valid_makes_t1 else 0
             selected_make = st.selectbox("Make", valid_makes_t1, index=default_make_idx)
         with col2:
             valid_models_t1 = sorted(valid_trend_combos[valid_trend_combos['Make'] == selected_make]['Model'].unique())
-            default_model_idx = valid_models_t1.index('Cybertruck') if 'Cybertruck' in valid_models_t1 else 0
+            default_model_idx = valid_models_t1.index('3 Series') if '3 Series' in valid_models_t1 else 0
             selected_model = st.selectbox("Model", valid_models_t1, index=default_model_idx)
         with col3:
             # Optional model year filter — defaults to All Years to ensure the chart always has data.
@@ -158,7 +158,7 @@ if not df.empty:
 
         if not trend.empty:
             line = alt.Chart(trend).mark_line(color='#C4895A', point=True).encode(
-                x=alt.X('Date:T', title=''),
+                x=alt.X('Date:T', title='', axis=alt.Axis(format='%b %Y', labelAngle=-45)),
                 y=alt.Y('avg_price:Q', title='Average Sale Price ($)',
                         scale=alt.Scale(zero=False), axis=alt.Axis(format='$,.0f')),
                 tooltip=[
@@ -239,10 +239,12 @@ if not df.empty:
         col1, col2 = st.columns(2)
         with col1:
             valid_makes = sorted(valid_combos['Make'].unique())
-            selected_make_t4 = st.selectbox("Make", valid_makes, key='tab4_make')
+            default_make_t4 = valid_makes.index('BMW') if 'BMW' in valid_makes else 0
+            selected_make_t4 = st.selectbox("Make", valid_makes, index=default_make_t4, key='tab4_make')
         with col2:
             valid_models_t4 = sorted(valid_combos[valid_combos['Make'] == selected_make_t4]['Model'].unique())
-            selected_model_t4 = st.selectbox("Model", valid_models_t4, key='tab4_model')
+            default_model_t4 = valid_models_t4.index('3 Series') if '3 Series' in valid_models_t4 else 0
+            selected_model_t4 = st.selectbox("Model", valid_models_t4, index=default_model_t4, key='tab4_model')
 
         # aggregate by model year
         make_df = df[(df['Make'] == selected_make_t4) & (df['Model'] == selected_model_t4)]
