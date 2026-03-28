@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
-import numpy as np
 import os
 
 st.set_page_config(page_title="Prediction Analysis", page_icon="📈", layout="wide")
@@ -16,12 +15,6 @@ hr { border-color: #C4A882 !important; }
 .streamlit-expanderHeader {
     background-color: #EDE8DF;
     border-radius: 8px;
-}
-[data-testid="stMetric"] {
-    background-color: #EDE8DF;
-    border: 1px solid #C4A882;
-    border-radius: 10px;
-    padding: 16px 20px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -73,22 +66,6 @@ st.markdown(
 )
 st.divider()
 
-# accuracy summary metrics
-if not df_residuals.empty:
-    df_residuals['Error'] = df_residuals['Sold_Price'] - df_residuals['Predicted_Price']
-    df_residuals['Abs_Pct_Error'] = (df_residuals['Error'].abs() / df_residuals['Sold_Price']) * 100
-
-    r2 = 1 - (df_residuals['Error'] ** 2).sum() / ((df_residuals['Sold_Price'] - df_residuals['Sold_Price'].mean()) ** 2).sum()
-    rmse = np.sqrt((df_residuals['Error'] ** 2).mean())
-    median_ape = df_residuals['Abs_Pct_Error'].median()
-
-    m1, m2, m3 = st.columns(3)
-    m1.metric("R² Score", f"{r2:.3f}", help="Proportion of price variance explained by the model. 1.0 is perfect; 0.0 means no better than guessing the mean.")
-    m2.metric("RMSE", f"${rmse:,.0f}", help="Root Mean Squared Error — the average dollar magnitude of the model's mistakes, weighted toward larger errors.")
-    m3.metric("Median Absolute % Error", f"{median_ape:.1f}%", help="The typical prediction is off by this percentage. Half of predictions fall within this band; half fall outside it.")
-
-    st.divider()
-
 # residual scatter
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
@@ -100,6 +77,7 @@ st.markdown(
 )
 
 if not df_residuals.empty:
+    df_residuals['Error'] = df_residuals['Sold_Price'] - df_residuals['Predicted_Price']
     max_val = max(df_residuals['Predicted_Price'].max(), df_residuals['Sold_Price'].max())
 
     scatter = alt.Chart(df_residuals).mark_circle(opacity=0.4, size=50).encode(
@@ -127,8 +105,8 @@ st.divider()
 st.subheader("2. Prediction Bias by Make")
 st.markdown(
     "Each box shows the distribution of prediction errors (Actual − Predicted) for that make across the test set. "
-    "A box centered above zero means the model tends to underestimate that brand — buyers paid more than the model expected. "
-    "A box below zero means the model overestimates — it predicted higher than what cars actually sold for. "
+    "A box to the right of zero means the model tends to underestimate that brand — buyers paid more than the model expected. "
+    "A box to the left of zero means the model overestimates — it predicted higher than what cars actually sold for. "
     "Makes with fewer than 5 test set appearances are excluded."
 )
 
@@ -149,16 +127,16 @@ if not df_residuals.empty:
     box_makes = alt.Chart(df_resid_makes).mark_boxplot(
         color='#C4895A', outliers={'color': '#C4895A', 'opacity': 0.3, 'size': 15}
     ).encode(
-        x=alt.X('Make:N', sort=make_order, title='', axis=alt.Axis(labelAngle=-45)),
-        y=alt.Y('Error:Q', title='Prediction Error — Actual minus Predicted ($)',
+        y=alt.Y('Make:N', sort=make_order, title=''),
+        x=alt.X('Error:Q', title='Prediction Error — Actual minus Predicted ($)',
                 axis=alt.Axis(format='$,.0f')),
         tooltip=[alt.Tooltip('Make:N', title='Make')]
-    ).properties(height=400)
+    ).properties(height=max(300, len(make_order) * 22))
 
-    # Zero line marks perfect prediction — boxes above it mean the model underestimated.
-    zero_line = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule(
+    # Zero line marks perfect prediction — boxes to the right mean the model underestimated.
+    zero_line = alt.Chart(pd.DataFrame({'x': [0]})).mark_rule(
         color='black', strokeDash=[4, 4]
-    ).encode(y='y:Q')
+    ).encode(x='x:Q')
 
     st.altair_chart(box_makes + zero_line, use_container_width=True)
 else:
@@ -166,45 +144,8 @@ else:
 
 st.divider()
 
-# error by price tier
-st.subheader("3. Prediction Accuracy by Price Tier")
-st.markdown(
-    "Breaks the test set into price tiers and shows the median absolute percentage error within each band. "
-    "Models typically struggle at the extremes — very cheap cars often have quirky auction dynamics, "
-    "while very expensive cars are rare enough that the training data thins out. "
-    "A lower bar means the model is more reliable in that price range."
-)
-
-if not df_residuals.empty:
-    # Bin into intuitive price tiers based on the Cars & Bids price distribution.
-    tier_bins = [0, 15_000, 30_000, 60_000, 100_000, float('inf')]
-    tier_labels = ['Under $15K', '$15K–$30K', '$30K–$60K', '$60K–$100K', 'Over $100K']
-    df_residuals['Price Tier'] = pd.cut(
-        df_residuals['Sold_Price'], bins=tier_bins, labels=tier_labels
-    )
-
-    tier_summary = df_residuals.groupby('Price Tier', observed=True)['Abs_Pct_Error'].agg(
-        median_mape='median', count='count'
-    ).reset_index()
-
-    bar_tier = alt.Chart(tier_summary).mark_bar(color='#C4895A').encode(
-        x=alt.X('Price Tier:N', sort=tier_labels, title=''),
-        y=alt.Y('median_mape:Q', title='Median Absolute % Error'),
-        tooltip=[
-            alt.Tooltip('Price Tier:N', title='Tier'),
-            alt.Tooltip('median_mape:Q', format='.1f', title='Median Abs % Error'),
-            alt.Tooltip('count:Q', title='Test Set Cars')
-        ]
-    ).properties(height=350)
-
-    st.altair_chart(bar_tier, use_container_width=True)
-else:
-    st.warning("Residual data not found.")
-
-st.divider()
-
 # feature importance
-st.subheader("4. Feature Importance (SHAP Values)")
+st.subheader("3. Feature Importance (SHAP Values)")
 st.markdown(
     "Bar length reflects each variables's average absolute SHAP value across the test set. SHAP is a model-agnostic measure of "
     "how much a given input shifts the predicted price. Longer bars indicate variables the model "
@@ -229,7 +170,7 @@ else:
 st.divider()
 
 # partial dependence
-st.subheader("5. Marginal Price Effects (Partial Dependence)")
+st.subheader("4. Marginal Price Effects (Partial Dependence)")
 st.markdown(
     "Partial dependence plots isolate the relationship between a single feature and the predicted price by averaging "
     "out the influence of all other variables. Select a feature below to see how the model's output changes as that "
