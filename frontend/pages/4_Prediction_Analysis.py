@@ -57,22 +57,22 @@ df_pdp = load_pdp_data()
 
 st.title("📈 Prediction Analysis")
 st.markdown(
-    "This page provides a transparent look at how the price predictor model works and how well it performs. "
-    "The predictor you used on the previous page is an XGBoost machine learning model trained on thousands of "
-    "historical Cars & Bids auction results. Rather than taking that estimate on faith, the charts below let you "
+    "This page provides a look at how the price predictor model works and how well it performs. "
+    "The price predictor you used on the previous page is an XGBoost machine learning model trained on thousands of "
+    "historical Cars & Bids auction results. Rather than blindly trusting me that the model works, the charts below let you "
     "examine the model's accuracy, understand which inputs it relies on most heavily, and see how individual "
     "variables influence the predicted price. If you ever wonder why the predictor returned a certain number, "
-    "this page is where to look."
+    "you can look here."
 )
 st.divider()
 
 # residual scatter
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
-    "Each point represents a car from the test data set, plotted by the model's estimate against the actual sale price. "
+    "Each point on this graph represents a car from the test data set. The cars are plotted by the model's price prediction against the actual sale price. "
     "Points along the dashed diagonal indicate accurate predictions. Points above the line sold for more than expected, which could potentially be"
     "driven by auction dynamics, rarity, or condition factors not fully captured in the listing text. "
-    "Points below the line sold for less than expected. Color intensity reflects the magnitude of the error, with blue indicating "
+    "Points below the line sold for less than expected. The color intensity of the points reflects the magnitude of the error, with blue indicating "
     "underestimates and orange indicating overestimates."
 )
 
@@ -104,10 +104,10 @@ st.divider()
 # residuals by make
 st.subheader("2. Prediction Bias by Make")
 st.markdown(
-    "Each box shows the distribution of prediction errors (Actual − Predicted) for that make across the test set. "
-    "A box to the right of zero means the model tends to underestimate that brand — buyers paid more than the model expected. "
-    "A box to the left of zero means the model overestimates — it predicted higher than what cars actually sold for. "
-    "Makes with fewer than 5 test set appearances are excluded."
+    "Each box shows the distribution of prediction errors (Actual Price − Predicted Price) for that make across the test dataset. "
+    "A box to the right of zero means the model tends to underestimate that brand. This means buyers paid more than the model expected. "
+    "A box to the left of zero means the model overestimates. This means it predicted higher prices than what cars actually sold for. "
+    "Any make with fewer than 5 test set appearances was excluded."
 )
 
 if not df_residuals.empty:
@@ -147,11 +147,10 @@ st.divider()
 # feature importance
 st.subheader("3. Feature Importance (SHAP Values)")
 st.markdown(
-    "Bar length reflects each variables's average absolute SHAP value across the test set. SHAP is a model-agnostic measure of "
-    "how much a given input shifts the predicted price. Longer bars indicate variables the model "
+    "SHAP or SHapley Additive exPlanations are a measure of how much a given input shifts the predicted price of a model. In this chart, bar length reflects each variables's average absolute SHAP value across the test set. Longer bars indicate variables that the model "
     "consistently relies on to distinguish high vs low value vehicles. This does not indicate directionality, so "
     "a feature ranked highly may push prices up or down depending on its value. Features near the bottom contribute "
-    "minimally to the prediction and may be candidates for removal in future iterations."
+    "minimally to the prediction and may be candidates for removal from the model in future iterations."
 )
 
 if not df_shap.empty:
@@ -172,10 +171,10 @@ st.divider()
 # partial dependence
 st.subheader("4. Marginal Price Effects (Partial Dependence)")
 st.markdown(
-    "Partial dependence plots isolate the relationship between a single feature and the predicted price by averaging "
-    "out the influence of all other variables. Select a feature below to see how the model's output changes as that "
+    "Partial dependence plots show the relationship between a single feature and the predicted price by averaging "
+    "out the influence of all other variables. You can select a feature below to see how the model's output changes as that "
     "input varies across its observed range, holding all else equal. Steep slopes indicate high sensitivity while flat "
-    "regions suggest the model treats that range as largely price-neutral. Note that interactions between features "
+    "regions suggest the model treats that range as largely price-neutral. Note that interactions between features as well as categorical variables "
     "are not captured here, you can use SHAP values above for a more complete picture."
 )
 
