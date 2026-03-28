@@ -206,7 +206,7 @@ with tab3:
 
         with col1:
             st.write("#### Market Share Distribution")
-            st.caption("How the market splits across the four listing archetypes — essentially, which type of car listing is most common on the platform.")
+            st.caption("This chart shows how the market splits across the four listing archetypes. This is casically which type of car listing is most common on the platform.")
             pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
                 color=alt.Color(field="Archetype", type="nominal",
@@ -218,7 +218,7 @@ with tab3:
             
         with col2:
             st.write("#### Average Sold Price")
-            st.caption("The average hammer price for each archetype — so you can see which type of listing tends to attract the most money at auction.")
+            st.caption("This chart shows which archetype tends to attract the most money at auction.")
             # Upgraded to Altair to sync colors with the pie chart and fix label clipping
             bar = alt.Chart(arch_summary).mark_bar().encode(
                 x=alt.X("Archetype:N", title="", axis=alt.Axis(labelAngle=-45, labelLimit=300, labelOverlap=False)),
@@ -229,8 +229,8 @@ with tab3:
             st.altair_chart(bar, use_container_width=True)
 
 with tab4:
-    st.subheader("Head-to-Head comparison of listing text length")
-    st.markdown("The following charts attempt to answer the question: Does writing a longer description always help? You can use the dropdowns below to compare how word count in different sections impacts the final sale price.")
+    st.subheader("Text Length Impact on Price")
+    st.markdown("The following charts try to show if a longer description is corrrelated with sale price. You can use the dropdowns below to see how word count in different sections may impact the final sale price.")
     
     # Map the clean CSV columns back to readable dropdown options
     wc_columns = {
@@ -270,7 +270,7 @@ with tab4:
             
             return scatter + trendline
 
-        st.caption("Each dot is a real listing — the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail. Charts are zoomed to the 95th percentile to hide outliers.")
+        st.caption("Each dot is a real listing and the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail or have more to share. Charts are zoomed to the 95th percentile to hide outliers.")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -282,7 +282,7 @@ with tab4:
             st.altair_chart(build_scatter_trend(section_2, wc_columns[section_2], '#8B3A3A'), use_container_width=True)
 
 with tab5:
-    st.subheader("The 'Auction Buzzword' Impact Analyzer")
+    st.subheader("'Buzzword' Impact Analyzer")
     st.markdown("Which specific words or phrases extracted from the text are most associated with high or low sale prices?")
 
     st.caption("These values show the average price difference between listings containing each word and those that don't — they are correlations, not causes. A word like 'performance' appearing with a large negative value doesn't mean writing it hurts your sale; it more likely means cheaper sporty cars use that word more often. Use this to understand what language tends to appear in different price brackets, not as writing advice.")
