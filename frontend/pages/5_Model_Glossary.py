@@ -174,7 +174,7 @@ with tab2:
         {
             "Feature": "State",
             "Type": "Categorical",
-            "Encoding": "Target Encoded",
+            "How": "Target Encoded",
             "Description": "The US state where the car is located, parsed from the seller's listed location (e.g. 'San Diego, CA 92101' → 'CA'). California and other dry-climate states command a premium for rust-free cars. Target encoded due to high cardinality.",
         },
     ]
