@@ -188,10 +188,10 @@ with tab3:
     
     if not df_archetypes.empty:
         cluster_mapping = {
-            0: "The Loaded Luxury Cruiser",
-            1: "The Rad-Era Driver (90s/00s)",
-            2: "The Track & Performance Build",
-            3: "The Modern EV / Financed Flip"
+            0: "Comfort and Luxury",
+            1: "Imported and Modified",
+            2: "Performance and Track",
+            3: "Modern EV and Hybrid"
         }
         df_archetypes['Archetype'] = df_archetypes['Archetype_Cluster'].map(cluster_mapping)
         
