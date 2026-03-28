@@ -184,7 +184,7 @@ with tab2:
 
 with tab3:
     st.subheader("The Four Hidden Car Archetypes")
-    st.markdown("This section is a little hard to explain but essentialy the charts below show my attempt at clustering cars into categories using only raw text fields. Using a technique called Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes. As you can see below, the algorithm found four **archetypes** )
+    st.markdown("This section is a little hard to explain but essentially the charts below show my attempt at clustering cars into categories using only raw text fields. Using a technique called Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes. As you can see below, the algorithm found four **archetypes**.")
     
     if not df_archetypes.empty:
         cluster_mapping = {
