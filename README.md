@@ -294,7 +294,7 @@ Model transparency page with four charts: residual scatter, prediction bias by m
 
 - **Residual scatter:** Points above the diagonal sold for more than the model expected; points below sold for less. Color intensity reflects error magnitude.
 - **Prediction bias by make:** Box plot of (Actual − Predicted) grouped by make, sorted from most-underestimated to most-overestimated, with a dashed zero line. Reveals which brands the model has systematic blind spots for. Makes with fewer than 5 test samples are excluded.
-- **SHAP importance:** Bar length = mean absolute SHAP value = average impact magnitude regardless of direction. A feature that alternately adds and subtracts $5K still scores high.
+- **SHAP importance:** Bar length = mean absolute SHAP value = average impact magnitude regardless of direction. A feature that alternately adds and subtracts $5K still scores high. The 20 individual `text_component_N` SVD dimensions are collapsed into a single **"Listing Description Text"** bar (their SHAP values are summed) so the chart remains readable to non-technical users.
 - **PDP:** Shows the marginal effect of one variable in isolation (holding all others at their mean). Distinct from SHAP, which captures each feature's actual contribution per prediction including interactions.
 
 **Data sources:** `shap_importance.csv`, `residual_data.csv`, `pdp_data.csv`

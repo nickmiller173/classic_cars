@@ -150,14 +150,28 @@ st.markdown(
     "SHAP or SHapley Additive exPlanations are a measure of how much a given input shifts the predicted price of a model. In this chart, bar length reflects each variables's average absolute SHAP value across the test set. Longer bars indicate variables that the model "
     "consistently relies on to distinguish high vs low value vehicles. This does not indicate directionality, so "
     "a feature ranked highly may push prices up or down depending on its value. Features near the bottom contribute "
-    "minimally to the prediction and may be candidates for removal from the model in future iterations."
+    "minimally to the prediction and may be candidates for removal from the model in future iterations. "
+    "Note: the **Listing Description Text** bar aggregates the collective contribution of all text-derived features — "
+    "the model processes the full listing description through a TF-IDF and dimensionality reduction pipeline, producing "
+    "multiple components that are combined here into a single bar for readability."
 )
 
 if not df_shap.empty:
+    # The TF-IDF → SVD pipeline produces 20 latent text dimensions (text_component_0 through
+    # text_component_19). Individually they're uninterpretable — each one is a blend of
+    # hundreds of TF-IDF terms. Summing their SHAP values into one "Listing Description Text"
+    # bar shows their collective importance without exposing meaningless component indices.
+    df_shap_display = df_shap.copy()
+    text_mask = df_shap_display['feature'].str.startswith('text_component')
+    text_shap_total = df_shap_display.loc[text_mask, 'mean_abs_shap'].sum()
+    df_shap_display = df_shap_display[~text_mask]
+    text_row = pd.DataFrame([{'feature': 'Listing Description Text', 'mean_abs_shap': text_shap_total}])
+    df_shap_display = pd.concat([df_shap_display, text_row], ignore_index=True)
+
     # mean_abs_shap is the average of |SHAP value| across all test samples for each feature.
     # It measures how much that feature moves the prediction on average, regardless of direction
     # (a feature that sometimes adds $5k and sometimes subtracts $5k still has a large mean abs SHAP).
-    fig_shap = alt.Chart(df_shap).mark_bar(color='#C4895A').encode(
+    fig_shap = alt.Chart(df_shap_display).mark_bar(color='#C4895A').encode(
         x=alt.X('mean_abs_shap:Q', title='Mean Absolute SHAP Value (log $)'),
         y=alt.Y('feature:N', sort='-x', title=None, axis=alt.Axis(labelLimit=400)),
         tooltip=['feature', alt.Tooltip('mean_abs_shap:Q', format='.4f', title='Importance')]
