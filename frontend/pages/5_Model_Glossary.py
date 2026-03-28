@@ -12,7 +12,7 @@ hr { border-color: #C4A882 !important; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("📖 Model Glossary")
+st.title("📖 Variable Glossary")
 st.markdown(
     "Here is a reference guide to every variable the price predictor uses. The features are grouped by how they are created. "
     "For each one you can see where the data comes from, how it is processed, and why it was included in the model."
