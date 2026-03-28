@@ -14,7 +14,7 @@ hr { border-color: #C4A882 !important; }
 
 st.title("📖 Model Glossary")
 st.markdown(
-    "A reference guide to every variable the price predictor uses. Features are grouped by how they are created. "
+    "Here is a reference guide to every variable the price predictor uses. The features are grouped by how they are created. "
     "For each one you can see where the data comes from, how it is processed, and why it was included in the model."
 )
 st.divider()
@@ -28,7 +28,7 @@ tab1, tab2, tab3, tab4 = st.tabs([
 
 with tab1:
     st.subheader("Raw & Structured Features")
-    st.caption("These come directly from the auction listing with minimal transformation — mostly cleaning and type conversion.")
+    st.caption("These come directly from the auction listing with minimal transformation, mostly just cleaning and type conversion.")
 
     features = [
         {
@@ -111,7 +111,7 @@ with tab1:
 
 with tab2:
     st.subheader("Engineered Features")
-    st.caption("These do not exist in the raw listing — they are derived or computed during preprocessing to give the model richer signals.")
+    st.caption("These do not exist in the raw listing, they are derived or computed during preprocessing to give the model better signals.")
 
     features2 = [
         {
@@ -226,7 +226,7 @@ with tab3:
 
 with tab4:
     st.subheader("Interaction Features")
-    st.caption("These combine two existing features into one to let the model capture effects that neither variable can express alone.")
+    st.caption("These variable combine two existing features into one to let the model capture effects that neither variable can express alone.")
 
     interactions = [
         {
