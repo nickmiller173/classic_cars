@@ -301,6 +301,18 @@ Model transparency page with four charts: residual scatter, prediction bias by m
 
 ---
 
+### `frontend/pages/5_Model_Glossary.py`
+A reference page documenting every variable the price predictor uses, organized into four tabs:
+
+- **Raw & Structured:** Make, Model, Mileage, Engine Displacement, Gears, Transmission Type, S&P 500 Close, Exterior/Interior Color, Title Status, Drivetrain, Seller Type — sourced directly from listing fields with cleaning and type normalization.
+- **Engineered Features:** Car Age, Model Year, Mileage Per Year, Flaw Count, Flaw Severity Score, Trim Tier, Auction Year/Month, State — computed or derived during preprocessing.
+- **Text & NLP Flags:** The 12 binary keyword indicator flags (2 keys, dry climate, project car, recent major service, etc.) with their regex patterns and source fields documented; plus an explanation of the TF-IDF → SVD text pipeline that produces the "Listing Description Text" feature.
+- **Interaction Features:** make_model_year, make_model_mileage_bucket, make_model_trim, seller_x_title, car_age × mileage, S&P 500 × auction_year — explains what each interaction captures and why it was created.
+
+**No data dependencies** — entirely static content, no CSV files required.
+
+---
+
 ### `frontend/.streamlit/config.toml`
 Defines the custom warm beige color theme applied globally across all pages. Primary color `#8B5E3C`, background `#FAF8F4`, secondary background `#EDE8DF`.
 
