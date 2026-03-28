@@ -211,9 +211,9 @@ with tab3:
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
                 color=alt.Color(field="Archetype", type="nominal",
                             scale=alt.Scale(range=['#C4895A', '#8B5E3C', '#8B3A3A', '#D4B896']),
-                            legend=alt.Legend(title="Archetypes", orient="bottom")),
+                            legend=alt.Legend(title=None, orient="right", labelLimit=200)),
                 tooltip=['Archetype', 'Market_Share', 'Average_Price']
-            )
+            ).properties(height=300)
             st.altair_chart(pie, use_container_width=True)
             
         with col2:
