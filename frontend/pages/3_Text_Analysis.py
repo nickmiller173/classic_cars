@@ -22,7 +22,7 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 st.title("📝 Advanced Text Insights")
-st.markdown("By applying Natural Language Processing to thousands of unstructured auction descriptions, I was able to extract hidden themes that may drive vehicle valuations on Cars & Bids.")
+st.markdown("By applying Natural Language Processing (NLP) techniques to thousands of unstructured auction descriptions, I was able to extract hidden themes that may drive vehicle valuations on Cars & Bids.")
 
 st.info(
         "A general note: these figures show **correlation, not causation.** Each bar reflects the average price difference between "
@@ -98,7 +98,7 @@ with tab1:
         impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
         
         st.write("### Resale Value Impact")
-        st.caption("Each bar shows the average price difference between listings that mention a feature vs. those that don't — not that the feature itself causes a higher or lower price. A car described as a 'project car' sells for less because it's a project car, not because of the words used. Treat this as a signal of what types of cars use each phrase, not a recipe for writing listings.")
+        st.caption("Each bar shows the average price difference between listings that mention a feature vs. those that don't — not that the feature itself causes a higher or lower price.")
         
         import altair as alt
         
@@ -131,7 +131,7 @@ with tab1:
 
 with tab2:
     st.subheader("The ROI of Premium Aftermarket Brands")
-    st.markdown("The following charts attempt to answer the question: Do buyers actually pay a premium for aftermarket parts? Here I try to show the financial impact of specific brands extracted from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text.")
+    st.markdown("Here I try to show the financial impact of specific brands extracted from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text. It is intersting to note that some of the less desireable brands actually indicate a lower price on average.")
     
     if not df_brands.empty:
         baseline_price = df_brands['Sold_Price'].mean()
@@ -184,7 +184,7 @@ with tab2:
 
 with tab3:
     st.subheader("The Four Hidden Car Archetypes")
-    st.markdown("The charts below show an attempt at clustering cars into categories using only rich text fields. Using Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes")
+    st.markdown("This section is a little hard to explain but essentialy the charts below show my attempt at clustering cars into categories using only raw text fields. Using a technique called Non-Negative Matrix Factorization (NMF), I blinded the algorithm to the car's **Make** and **Model**, forcing it to cluster vehicles purely based on their highlights, equipment, modifications, and seller notes. As you can see below, the algorithm found four **archetypes** )
     
     if not df_archetypes.empty:
         cluster_mapping = {

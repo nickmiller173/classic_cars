@@ -97,7 +97,7 @@ for k, v in _defaults.items():
         st.session_state[k] = v
 
 # header and intro copy
-st.title("🚗 carsandbids.com: Car Price Predictor")
+st.title("🚗 Car Price Predictor")
 st.markdown(
     "This tool uses a machine learning model that I trained on thousands of historical Cars & Bids auction results to estimate "
     "what a vehicle is likely to sell for at auction. I built this tool for two primary use cases:"
@@ -255,11 +255,11 @@ st.divider()
 # auction text form
 st.subheader("📝 2. Auction Description")
 st.info(
-    "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, "
+    "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, just "
     "paste the corresponding text directly from the listing page for the most accurate estimate. The model will parse each "
-    "section for condition signals — modifications, known flaws, service history, and more — that meaningfully influence price. "
-    "Typing a few casual words will have little effect; the model was trained on full listing text and responds to specific "
-    "keywords and phrases (e.g. 'one owner', 'california car', '2 keys', 'emissions'). If you are exploring a vehicle "
+    "section for condition signals (i.e. modifications, known flaws, service history, and more) that meaningfully influence price. "
+    "Typing a few casual words will probably have little effect because the model was trained on full listing text and responds to specific "
+    "keywords and phrases (e.g. 'one owner', 'california car', '2 keys', 'emissions'). If you are just exploring a vehicle "
     "generally, these fields can be left blank."
 )
 
