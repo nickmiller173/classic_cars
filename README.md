@@ -2,7 +2,7 @@
 
 An independent machine learning platform built entirely on Cars & Bids auction data. The platform combines a predictive pricing engine with deep market analysis across ~31,000 auctions and ~$883M in recorded sales, offering buyers, sellers, and enthusiasts an objective lens on what cars are actually worth.
 
-The app is live at Streamlit Community Cloud and consists of four tools: a real-time price predictor backed by a serverless AWS Lambda API, a market trends dashboard, an NLP insights explorer, and a model transparency page showing how the predictor works under the hood.
+The app is live at Streamlit Community Cloud and consists of five pages: a real-time price predictor backed by a serverless AWS Lambda API, a market trends dashboard, an NLP text insights explorer, a model transparency page showing how the predictor works under the hood, and a model glossary documenting every variable used in the model.
 
 ---
 
@@ -134,9 +134,14 @@ The main data pipeline. Reads from `cars_and_bids_full_history_v3.csv` and produ
 ---
 
 ### `processing/dashboard_data.ipynb`
-Generates `dashboard_data.csv` — a cleaned version of the full dataset with all engineered indicator columns retained. This is the primary dataset for all frontend analytics pages.
+Extracts a lightweight subset of `cleaned_data_no_encoding.csv` for use across all Streamlit analytics pages. Retains only the columns needed for UI charts and feature-filter controls, keeping the file small enough to commit to the repo.
 
-**Dependencies:** `cars_and_bids_full_history_v3.csv`
+**Key steps:**
+- Derives `Year` (model year) from `auction_year - car_age`
+- Normalizes `Seller Type`: all dealer fee variants (e.g. "Dealer ($95 Doc Fee)") are collapsed to `"Dealer"` so the seller type breakdown chart has clean two-category data
+- Selects the final column list including `Seller Type` and `Body Style` (needed for the Market Trends seller breakdown and body style box plot) plus all binary indicator flags (`2_keys_ind`, `emissions_ind`, etc.) that power the Text Analysis keyword chart
+
+**Dependencies:** `cleaned_data_no_encoding.csv`
 **Output:** `data/frontend_data/dashboard_data.csv`
 
 ---
@@ -163,9 +168,15 @@ Runs all NLP analyses on the auction listing text fields and exports four CSVs c
 **Analyses:**
 - **General keyword flags** — computed directly from `dashboard_data.csv` (the engineered boolean indicators)
 - **Aftermarket brand extraction** — regex-based extraction of premium brand names from Modifications/Equipment text
-- **Listing archetypes** — NMF (Non-negative Matrix Factorization) with 4 topics on TF-IDF vectors of combined listing text; NMF was chosen over LDA because it produces parts-based decompositions that are more interpretable on short auction descriptions
-- **Listing detail / effort scores** — per-section word counts as a proxy for seller effort
-- **Auction buzzwords** — Ridge regression (L2) on TF-IDF features to estimate per-word price correlation; Ridge is preferred over OLS because the ~2,500 TF-IDF features are highly correlated
+- **Listing archetypes** — NMF (Non-negative Matrix Factorization) with 4 topics on TF-IDF vectors of combined listing text (Highlights, Equipment, Modifications, Seller Notes). NMF was chosen over LDA because it produces parts-based, additive decompositions that are more interpretable on short auction-style text. The TF-IDF vocabulary suppresses make and model names so the algorithm clusters by listing-style features (e.g. "track-focused", "electric", "JDM") rather than just grouping by brand. `N_TOPICS=4` was chosen empirically — enough to separate the four broad archetypes without over-fragmenting. The four discovered clusters are: **Comfort and Luxury** (leather, climate, sunroof), **Imported and Modified** (aftermarket, JDM, engine), **Performance and Track** (carbon fiber, exhaust, adaptive), and **Modern EV and Hybrid** (battery, electric, lithium). Each listing is hard-assigned to its highest-scoring component
+- **Listing detail / effort scores** — word counts for each of the eight seller-written sections (Highlights, Known Flaws, Modifications, Equipment, Recent Service History, Ownership History, Other Items Included in Sale, Seller Notes). These are used in the Text Analysis dashboard as a proxy for seller effort, where users can select any two sections and compare how word count correlates with sale price via a scatter plot with a regression trendline
+- **Auction buzzwords** — per-word price correlation estimated via Ridge regression on TF-IDF features. Full methodology:
+  1. All eight seller-written text fields (Highlights, Equipment, Modifications, Known Flaws, Recent Service History, Ownership History, Seller Notes, Other Items) are concatenated into one document per listing
+  2. A custom stop-word list is built dynamically from the actual makes and models in the dataset, plus common auction boilerplate (e.g. "seller", "reports", "gallery"), so the vocabulary captures listing-style language rather than brand-level price differences
+  3. TF-IDF vectorization with `max_features=2500` and `ngram_range=(1,2)` converts the text to a weighted term matrix — single words and two-word phrases are both included (e.g. "carbon fiber", "no reserve"), and TF-IDF down-weights terms that appear in nearly every listing so genuinely distinguishing language carries more signal
+  4. Ridge regression (`alpha=10`) is fit with the 2,500 TF-IDF scores as inputs and sale price as the target. Ridge (L2 regularization) is preferred over OLS because the TF-IDF features are highly correlated — common automotive terms co-occur frequently — and L2 shrinks unstable coefficients without zeroing them out entirely
+  5. Terms with a total corpus frequency of 5 or fewer are dropped before display; their coefficients are unreliable with so few observations
+  6. The top 15 positive and top 15 negative coefficients are shown in the dashboard. Each coefficient represents the estimated dollar change in sale price associated with a one-unit increase in that term's TF-IDF score, holding all other terms constant. These are correlations, not causal effects — a word like "ceramic" scores high because it appears on expensive Porsches, not because writing the word raises your price
 
 **Outputs:** `nlp_archetypes.csv`, `nlp_brands.csv`, `nlp_buzzwords.csv`, `nlp_effort_scores.csv`
 
@@ -276,7 +287,7 @@ Seven-tab exploratory dashboard covering platform-wide price trends, per-make/mo
 - Sweet spot tab: requires ≥2 qualifying model years with ≥3 sales each (a one-bar chart has nothing to compare)
 - Depreciation tab: requires ≥3 sales per make/age bucket; vehicle age capped at 50 years
 
-**Data sources:** `dashboard_data.csv` (all tabs except seller type and body style), `cars_and_bids_full_history_v2.csv` (seller type breakdown and body style box plot — the only raw file that carries those columns)
+**Data sources:** `dashboard_data.csv` (all tabs including seller type and body style — those columns were added to the dashboard export in `dashboard_data.ipynb`)
 
 ---
 
@@ -381,8 +392,6 @@ All charts are built with Altair (Vega-Lite under the hood). Altair was chosen o
 | `seller_x_title` | Categorical (TargetEncoded) | Interaction between seller type and title status |
 | `car_age_x_mileage` | Numeric | Joint deterioration signal |
 | `sp500_x_auction_year` | Numeric | Market conditions proxy |
-| `dry_climate_x_car_age` | Numeric | Climate preservation signal amplified by age |
-| `flaw_severity_x_model_year` | Numeric | Older cars penalized more heavily for flaws |
 
 ### Text Features
 Listing text fields (Highlights, Equipment, Modifications, Known Flaws, Recent Service History, Ownership History, Seller Notes, Other Items Included in Sale) are processed two ways:
