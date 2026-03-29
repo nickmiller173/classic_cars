@@ -22,7 +22,7 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 st.title("📈 Auction Market Trends")
-st.markdown("Explore macroeconomic trends and brand performance across the auction platform.")
+st.markdown("On this page you can explore macroeconomic trends and brand performance across the auction platform.")
 
 # data loading
 @st.cache_data
@@ -50,7 +50,7 @@ if not df.empty:
         st.subheader("Platform-Wide Market Overview")
 
         st.write("#### Average Sale Price Over Time")
-        st.caption("Monthly average sale price across all makes and models — shows the overall trajectory of the market and whether the platform's prices are trending up or down.")
+        st.caption("Monthly average sale price across all makes and models. This chart shows the overall trajectory of the market and whether the average prices of vehicles each month are trending up or down.")
 
         price_over_time = df.groupby(['auction_year', 'auction_month'])['Sold_Price'].mean().reset_index()
         price_over_time['Date'] = pd.to_datetime(
@@ -76,7 +76,7 @@ if not df.empty:
         make_avg_filtered = make_avg[make_avg['sales_count'] >= 50]
 
         st.write("#### Top 10 Makes by Average Sale Price")
-        st.caption("The ten makes with the highest average hammer price, filtered to brands with at least 50 sales — removes small-sample outliers so only well-represented brands appear.")
+        st.caption("The ten makes with the highest average sale price, filtered to brands with at least 50 sales in order to remove small-sample outliers so only common brands appear.")
 
         top_makes = make_avg_filtered.nlargest(10, 'avg_price')
         bar_top = alt.Chart(top_makes).mark_bar(color='#C4895A').encode(
@@ -92,7 +92,7 @@ if not df.empty:
         st.altair_chart(bar_top, use_container_width=True)
 
         st.write("#### Bottom 10 Makes by Average Sale Price")
-        st.caption("The ten makes with the lowest average hammer price among well-represented brands — useful for spotting the more accessible end of the market.")
+        st.caption("The ten makes with the lowest average sale price among common brands.")
 
         bottom_makes = make_avg_filtered.nsmallest(10, 'avg_price')
         bar_bottom = alt.Chart(bottom_makes).mark_bar(color='#8B3A3A').encode(
@@ -110,9 +110,7 @@ if not df.empty:
         # Seller type breakdown — uses dashboard_data.csv (Seller Type column added in dashboard_data.ipynb)
         st.write("#### Private Party vs. Dealer Sales")
         st.caption(
-            "Breakdown of auction listings by seller type and the average hammer price each group commands. "
-            "Dealer listings often skew toward newer or more mainstream inventory while private party sellers "
-            "list a wider range of vintages and condition levels."
+            "Breakdown of auction listings by seller type and the average sale price each group commands."
         )
 
         if 'Seller Type' in df.columns:
@@ -153,8 +151,8 @@ if not df.empty:
         st.subheader("Price Trend by Make & Model")
         st.caption(
             "Select a make and model to see how average sale prices have moved over time. Use the optional model year "
-            "filter to isolate a specific vintage — useful for separating, say, a 1990s air-cooled 911 from a modern one. "
-            "Note that filtering to a single model year can produce a sparse or empty chart for less commonly sold cars, "
+            "filter to isolate a specific vintage. Model year is useful to pinpoint the specific make and model vintage price trend. Leaving model year set to All Years may give a distorted view of the price trend."
+            "Note that filtering to a single model year (especially more recent years) can produce a sparse or empty chart for less commonly sold cars, "
             "since months with fewer than 2 sales of that exact vintage are excluded to avoid misleading single-point spikes."
         )
 
@@ -217,7 +215,7 @@ if not df.empty:
 
     with tab2:
         st.subheader("Sales Volume Over Time")
-        st.caption("How many cars sold per month across the whole platform — a direct read on whether the site is growing and which seasons see the most listing activity.")
+        st.caption("Cars sold per month across the whole platform. Here you can see the directly impact of seasonality.")
 
         volume = df.groupby(['auction_year', 'auction_month']).size().reset_index(name='sales_count')
         volume['Date'] = pd.to_datetime(
@@ -237,8 +235,8 @@ if not df.empty:
 
     with tab3:
         st.subheader("Price Heatmap by Month & Year")
-        st.caption("Each cell shows the average sale price for that month and year — darker teal means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time. "
-                   "The biggest thing that sticks out is the serious increase in average sale price starting in 2022, likely as the site gained traction and momentum after being established for a year and a half.")
+        st.caption("Each cell shows the average sale price for the corresponding month and year. Darker orange means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time. "
+                   "One large insigh that sticks out to me is the serious increase in average sale price starting in 2022, likely as the site gained traction and momentum after being established for a year and a half.")
 
         month_labels = {
             1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
@@ -267,7 +265,7 @@ if not df.empty:
 
     with tab4:
         st.subheader("Model Year Sweet Spot")
-        st.caption("Pick a make and model to see which production years command the highest average prices — useful for pinpointing the exact vintage buyers are willing to pay a premium for.")
+        st.caption("Pick a make and model to see which production years command the highest average prices. This could be useful for pinpointing the exact vintage for which buyers are willing to pay a premium (although there is the caveat that newer cars will be more expensive inherently).")
 
         # Pre-compute valid combos: require at least 2 model years with ≥3 sales each.
         # A single qualifying model year produces a one-bar chart with nothing to compare against,
@@ -319,7 +317,7 @@ if not df.empty:
         st.caption(
             "Shows how average sale price relates to vehicle age at auction time for the top makes by sales volume. "
             "A downward slope indicates typical depreciation; a U-shape or upward curve suggests the model has crossed "
-            "into collector territory where older examples command a premium. Car age is calculated as auction year minus model year."
+            "into collector territory where older examples command a premium. One insight I pulled from this chart is that the spike for Porsche's at 25 years might correspond with their first cars being mass produced (i.e. the 996 911 which is widely available)."
         )
 
         # Derive car age from existing columns (auction_year - model year).
@@ -358,8 +356,8 @@ if not df.empty:
     with tab6:
         st.subheader("Price Distribution by Body Style")
         st.caption(
-            "Each box shows the interquartile range of sale prices for that body style — the middle 50% of results. "
-            "The horizontal line inside each box is the median; whiskers extend to 1.5× the IQR. "
+            "These are box and whisker plots which each show the IQR (Interquartile Range) of sale prices for the corresponding body style. The main box area can be thought of as the middle 50% of results."
+            "The horizontal line inside each box is the median and the 'whiskers' extend to 1.5× the IQR. "
             "Points beyond the whiskers are outliers. The y-axis is capped at the 99th percentile so extreme "
             "outliers don't compress the boxes — a small number of very high-value sales exist beyond the visible range. "
             "Body styles with fewer than 30 sales are excluded."

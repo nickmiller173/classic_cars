@@ -84,17 +84,17 @@ else:
 # header and intro copy
 st.title("🚗 Cars & Bids Price Intelligence")
 st.markdown(
-    "I built this platform because, like most of the Cars & Bids community, I love tracking the prices "
+    "I built this platform because, like most of the Cars & Bids community, I enjoy tracking the prices "
     "of rare enthusiast cars as well as finding out what quirks and features make them unique. My tool "
     "combines a predictive pricing engine with raw data analysis across **{:,} auctions** and "
     "**${:.0f}M in recorded sales** — offering any user an objective lens on what these cars are actually "
     "worth (and WHY). Whether you're tracking a vintage sports car or a modern daily driver, this is my attempt "
-    "to turn raw auction results into fun and interesting insights."
+    "to turn raw auction results into interesting and valuable insights."
     .format(len(df), df['Sold_Price'].sum() / 1e6)
 )
 if data_through:
     st.caption(
-        f"Note - this data is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
+        f"Note - the data I collected is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
         "listings added after this date. All of the figures are derived from publicly available auction records "
         "and may not capture every transaction or reflect real-time platform data. "
         "For auctions that did not meet the seller's reserve, the highest recorded bid was treated as the sale price."
@@ -147,8 +147,8 @@ with nav1:
     <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:12px; padding:28px 32px; height:100%;">
         <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">🔮 Price Intelligence</p>
         <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
-            Here you can enter any vehicle's specifications and auction listing text to receive a machine learning price estimate,
-            benchmarked against historical comps from comparable sales. This is the main part of the platform for buyers evaluating
+            Here you can enter any vehicle's specifications and auction listing text to receive a price estimate from a machine learning model,
+            benchmarked against historical values from comparable sales. This is the main part of the platform for buyers evaluating
             active listings and sellers setting realistic expectations.
         </p>
         <a href="/Price_Predictor" target="_self" class="nav-link">Price Predictor</a>
@@ -182,7 +182,7 @@ if not df.empty:
 
     with col_vol:
         st.markdown("#### Auction Volume by Year")
-        st.caption("Looking at the annual listing volume, you can see Cars & Bids rapid growth since its 2020 launch.")
+        st.caption("Looking at the listing volume by year, you can see Cars & Bids rapid growth since its 2020 launch.")
 
         vol = df.groupby('auction_year').size().reset_index(name='count')
         vol_chart = alt.Chart(vol).mark_bar(color='#8B5E3C').encode(
@@ -219,12 +219,12 @@ if not df.empty:
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">EMISSIONS MENTIONED</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">{emissions_premium:+.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings that mention passing emissions or smog checks vs. those that don't</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings that mention emissions or smog checks vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{two_keys_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings where the seller confirms both original keys are included vs. those that don't</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings where the seller mentions both original keys are included vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">MOST LISTED MAKE</p>
