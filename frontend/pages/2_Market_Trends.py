@@ -356,10 +356,10 @@ if not df.empty:
     with tab6:
         st.subheader("Price Distribution by Body Style")
         st.caption(
-            "These are box and whisker plots which each show the IQR (Interquartile Range) of sale prices for the corresponding body style. The main box area can be thought of as the middle 50% of results."
+            "These are box and whisker plots which each show the IQR (Interquartile Range) of sale prices for the corresponding body style. The main box area can be thought of as the middle 50% of results. "
             "The horizontal line inside each box is the median and the 'whiskers' extend to 1.5× the IQR. "
             "Points beyond the whiskers are outliers. The y-axis is capped at the 99th percentile so extreme "
-            "outliers don't compress the boxes — a small number of very high-value sales exist beyond the visible range. "
+            "outliers don't compress the boxes, so a small number of very high-value sales exist beyond the visible range. "
             "Body styles with fewer than 30 sales are excluded."
         )
 

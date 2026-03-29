@@ -98,7 +98,7 @@ with tab1:
         impact_df = pd.DataFrame(results).sort_values(by="Premium (%)", ascending=False)
         
         st.write("### Resale Value Impact")
-        st.caption("Each bar shows the average price difference between listings that mention a feature vs. those that don't — not that the feature itself causes a higher or lower price.")
+        st.caption("Each bar shows the average price difference between listings that mention a feature vs. those that don't.")
         
         import altair as alt
         
@@ -131,7 +131,7 @@ with tab1:
 
 with tab2:
     st.subheader("The ROI of Premium Aftermarket Brands")
-    st.markdown("Here I try to show the financial impact of specific brands extracted from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text. It is intersting to note that some of the less desireable brands actually indicate a lower price on average.")
+    st.markdown("With these charts I try to show the financial impact of specific aftermarket brands. I extracted some of the most popular brand names from the raw **Modifications**, **Equipment** and **Other Items Included in Sale** text. It is intersting to note that some of the less desireable brands actually correspond with a lower price on average.")
     
     if not df_brands.empty:
         baseline_price = df_brands['Sold_Price'].mean()
@@ -147,7 +147,7 @@ with tab2:
         
         st.divider()
         st.write("### Brand Exclusivity vs. Value Premium")
-        st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it tends to command; the further right, the more commonly it shows up. Note: the premium reflects the average price of cars that happen to have that brand — expensive brands may simply show up on expensive cars regardless of whether they add value.")
+        st.caption("Each dot is an aftermarket brand mentioned in listings. The higher it sits, the bigger the price premium it corresponds to. The further right, the more commonly it shows up. Note: the premium reflects the average price of cars that happen to have that brand — expensive brands may simply show up on expensive cars regardless of whether they add value.")
         
         # explode brand list and compute per-brand premium
         df_exploded = df_brands.dropna(subset=['Extracted_Brands_List'])
@@ -206,7 +206,7 @@ with tab3:
 
         with col1:
             st.write("#### Market Share Distribution")
-            st.caption("This chart shows how the market splits across the four listing archetypes. This is casically which type of car listing is most common on the platform.")
+            st.caption("This chart shows how the market splits across the four listing archetypes. This is basically showing which type of car listing is most common on the platform.")
             pie = alt.Chart(arch_summary).mark_arc(innerRadius=50).encode(
                 theta=alt.Theta(field="Market_Share", type="quantitative"),
                 color=alt.Color(field="Archetype", type="nominal",
@@ -230,8 +230,7 @@ with tab3:
 
 with tab4:
     st.subheader("Text Length Impact on Price")
-    st.markdown("The following charts try to show if a longer description is corrrelated with sale price. You can use the dropdowns below to see how word count in different sections may impact the final sale price.")
-    
+    st.markdown("The following charts show if a longer description is corrrelated with sale price. You can use the dropdowns below to see how word count across the various raw text sections may impact the final sale price.")
     # Map the clean CSV columns back to readable dropdown options
     wc_columns = {
         'Highlights_WC': 'Highlights',
@@ -270,7 +269,7 @@ with tab4:
             
             return scatter + trendline
 
-        st.caption("Each dot is a real listing and the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail or have more to share. Charts are zoomed to the 95th percentile to hide outliers.")
+        st.caption("Each dot is a real listing and the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail or have more to share. More apparently, there is a negaitive correlation with the word count in the 'Known Flaws' section. Charts are zoomed to the 95th percentile to hide outliers.")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -283,9 +282,9 @@ with tab4:
 
 with tab5:
     st.subheader("'Buzzword' Impact Analyzer")
-    st.markdown("Which specific words or phrases extracted from the text are most associated with high or low sale prices?")
+    st.markdown("This chart tries to show which specific words or phrases extracted from the text are most associated with high or low sale prices")
 
-    st.caption("These values show the average price difference between listings containing each word and those that don't — they are correlations, not causes. A word like 'performance' appearing with a large negative value doesn't mean writing it hurts your sale; it more likely means cheaper sporty cars use that word more often. Use this to understand what language tends to appear in different price brackets, not as writing advice.")
+    st.caption("These values show the average price difference between listings containing each word and those that don't. Please see the README.md for a full description of how these words were chosen. A word like 'performance' appearing with a large negative value doesn't mean writing it hurts your sale; it more likely means cheaper sporty cars use that word more often. Use this to understand what language tends to appear in different price brackets, not as writing advice.")
 
     if not df_buzzwords.empty:
         # Split into top 15 premium and top 15 discount words
