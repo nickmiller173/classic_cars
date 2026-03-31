@@ -5,7 +5,7 @@ import pandas as pd
 import altair as alt
 import os
 
-API_URL = "https://r0fo8f5io3.execute-api.us-west-2.amazonaws.com/default/CarPriceApp"
+API_URL = st.secrets["API_URL"]
 
 # page config and custom CSS
 st.set_page_config(page_title="Price Predictor", page_icon="🚗", layout="wide")
