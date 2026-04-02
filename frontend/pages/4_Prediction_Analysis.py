@@ -69,7 +69,7 @@ st.divider()
 # residual scatter
 st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
-    "Each point on this graph represents a car from the test data set. The cars are plotted by the model's price prediction against the actual sale price. "
+    "Each point on this graph represents a car from the test data set. The cars are plotted by the machine learning model's price prediction against the actual sale price. "
     "Points along the dashed diagonal indicate accurate predictions. Points above the line sold for more than expected, which could potentially be"
     " driven by auction dynamics, rarity, or condition factors not fully captured in the listing text. "
     "Points below the line sold for less than expected. The color intensity of the points reflects the magnitude of the error, with blue indicating "
@@ -147,7 +147,7 @@ st.divider()
 # feature importance
 st.subheader("3. Feature Importance (SHAP Values)")
 st.markdown(
-    "SHAP or SHapley Additive exPlanations are a measure of how much a given input shifts the predicted price of a model. In this chart, bar length reflects each variables's average absolute SHAP value across the test set. Longer bars indicate variables that the model "
+    "SHAP (SHapley Additive exPlanations) are a measure of how much each feature pushes the model’s prediction away from the average car price. In this chart, bar length reflects each variables's average absolute SHAP value across the test set. Longer bars indicate variables that the model "
     "consistently relies on to distinguish high vs low value vehicles. This does not indicate directionality, so "
     "a feature ranked highly may push prices up or down depending on its value. Features near the bottom contribute "
     "minimally to the prediction and may be candidates for removal from the model in future iterations. "
