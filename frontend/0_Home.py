@@ -153,7 +153,7 @@ with nav1:
         </p>
         <a href="/Price_Predictor" target="_self" class="nav-link">Price Predictor</a>
         <a href="/Prediction_Analysis" target="_self" class="nav-link">Prediction Analysis</a>
-        <a href="/Model_Glossary" target="_self" class="nav-link">Model Glossary</a>
+        <a href="/Variable_Glossary" target="_self" class="nav-link">Variable Glossary</a>
     </div>
     """, unsafe_allow_html=True)
 
