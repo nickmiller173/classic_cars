@@ -99,7 +99,7 @@ for k, v in _defaults.items():
 # header and intro copy
 st.title("🚗 Car Price Predictor")
 st.markdown(
-    "This tool uses a machine learning model that I trained on thousands of historical Cars & Bids auction results to estimate "
+    "This tool uses a machine learning model trained on thousands of historical Cars & Bids auction results to estimate "
     "what a vehicle is likely to sell for at auction. I built this tool for two primary use cases:"
 )
 st.markdown(
@@ -233,11 +233,11 @@ with col3:
     if disp_opts:
         saved_disp = st.session_state['pred_displacement']
         disp_idx = disp_opts.index(saved_disp) if saved_disp in disp_opts else 0
-        displacement = st.selectbox("Engine Displacement (L) [0 for EV]", disp_opts, index=disp_idx)
+        displacement = st.selectbox("Engine Displacement (L)", disp_opts, index=disp_idx)
         if not spec_df.empty:
             spec_df = spec_df[spec_df['Engine_Displacement_L'] == displacement]
     else:
-        displacement = st.number_input("Engine Displacement (L) [0 for EV]", min_value=0.0, max_value=10.0, value=float(st.session_state['pred_displacement']), step=0.1, key='pred_displacement_input')
+        displacement = st.number_input("Engine Displacement (L)", min_value=0.0, max_value=10.0, value=float(st.session_state['pred_displacement']), step=0.1, key='pred_displacement_input')
     st.session_state['pred_displacement'] = displacement
 
     gears_opts = sorted(spec_df['Gears'].dropna().unique().tolist()) if not spec_df.empty and 'Gears' in spec_df.columns else []
@@ -254,12 +254,12 @@ st.divider()
 
 # auction text form
 st.subheader("📝 2. Auction Description")
-st.info(
+st.markdown(
     "These fields mirror the exact text sections used in every Cars & Bids listing. If you are evaluating an active auction, just "
-    "paste the corresponding text directly from the listing page for the most accurate estimate. The model will parse each "
-    "section for condition signals (i.e. modifications, known flaws, service history, and more) that meaningfully influence price. "
+    "paste the corresponding text directly from the listing page for the most accurate estimate. The machine learning model will parse each "
+    "section for condition signals (e.g., modifications, known flaws, service history, and more) that meaningfully influence price. "
     "Typing a few casual words will probably have little effect because the model was trained on full listing text and responds to specific "
-    "keywords and phrases (e.g. 'one owner', 'california car', '2 keys', 'emissions'). If you are just exploring a vehicle "
+    "keywords and phrases (e.g., 'one owner', 'california car', '2 keys', 'emissions'). If you are just exploring a vehicle "
     "generally, these fields can be left blank."
 )
 
