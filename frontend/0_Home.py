@@ -88,8 +88,7 @@ st.markdown(
     "of rare enthusiast cars as well as finding out what quirks and features make them unique. My tool "
     "combines a predictive pricing engine with raw data analysis across **{:,} auctions** and "
     "**${:.0f}M in recorded sales** — offering any user an objective lens on what these cars are actually "
-    "worth (and WHY). Whether you're tracking a vintage sports car or a modern daily driver, this is my attempt "
-    "to turn raw auction results into interesting and valuable insights."
+    "worth (and WHY)."
     .format(len(df), df['Sold_Price'].sum() / 1e6)
 )
 if data_through:
