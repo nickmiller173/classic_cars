@@ -94,7 +94,7 @@ st.markdown(
 )
 if data_through:
     st.caption(
-        f"Note - the data I collected is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
+        f"Note: the data I collected is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
         "listings added after this date. All of the figures are derived from publicly available auction records "
         "and may not capture every transaction or reflect real-time platform data. "
         "For auctions that did not meet the seller's reserve, the highest recorded bid was treated as the sale price."
@@ -163,7 +163,7 @@ with nav2:
         <p style="font-size:1.2rem; font-weight:700; color:#1a1a1a; margin:0 0 10px 0;">📊 Market Intelligence</p>
         <p style="font-size:0.92rem; color:#444; margin:0 0 4px 0;">
             Here you can find exploratory analysis of the full auction dataset. Some examples are: price trends by make and model,
-            seasonal patterns, volume growth, and NLP(Natural Language Processing) derived insights on how listing language and
+            seasonal patterns, volume growth, and NLP (Natural Language Processing) derived insights on how listing language and
             condition descriptors correlate with final sale price.
         </p>
         <a href="/Market_Trends" target="_self" class="nav-link">Market Trends</a>
@@ -219,12 +219,12 @@ if not df.empty:
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">EMISSIONS MENTIONED</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">{emissions_premium:+.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings that mention emissions or smog checks vs. those that don't</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">Difference in average sale price between listings that mention emissions or smog checks vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">TWO KEYS PREMIUM</p>
                 <p style="margin:4px 0 0 0; font-size:1.6rem; font-weight:700; color:#1a1a1a;">+{two_keys_premium:.1f}%</p>
-                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">listings where the seller mentions both original keys are included vs. those that don't</p>
+                <p style="margin:2px 0 0 0; font-size:0.78rem; color:#666;">Difference in average sale price between listings where the seller mentions both original keys are included vs. those that don't</p>
             </div>
             <div style="background:#EDE8DF; border:1px solid #C4A882; border-radius:10px; padding:16px 20px;">
                 <p style="margin:0; font-size:0.8rem; color:#8B5E3C; font-weight:600;">MOST LISTED MAKE</p>
@@ -235,5 +235,5 @@ if not df.empty:
         """, unsafe_allow_html=True)
 
 st.divider()
-st.caption("For the full technical details of this project — including the data pipeline, model architecture, AWS infrastructure, and design decisions — please see the [README](https://github.com/nickmiller173/classic_cars/blob/main/README.md).")
+st.caption("For the full technical details of this project, including the data pipeline, model architecture, AWS infrastructure, and design decisions please see the [README](https://github.com/nickmiller173/classic_cars/blob/main/README.md).")
 
