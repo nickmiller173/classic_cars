@@ -22,7 +22,7 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 st.title("📈 Auction Market Trends")
-st.markdown("On this page you can explore macroeconomic trends and brand performance across the auction platform.")
+st.markdown("On this page you can explore macroeconomic trends and sales performance across the auction platform.")
 
 # data loading
 @st.cache_data
@@ -92,7 +92,7 @@ if not df.empty:
         st.altair_chart(bar_top, use_container_width=True)
 
         st.write("#### Bottom 10 Makes by Average Sale Price")
-        st.caption("The ten makes with the lowest average sale price among common brands.")
+        st.caption("The ten makes with the lowest average sale price, filtered to brands with at least 50 sales in order to remove small-sample outliers so only common brands appear.")
 
         bottom_makes = make_avg_filtered.nsmallest(10, 'avg_price')
         bar_bottom = alt.Chart(bottom_makes).mark_bar(color='#8B3A3A').encode(
@@ -151,8 +151,8 @@ if not df.empty:
         st.subheader("Price Trend by Make & Model")
         st.caption(
             "Select a make and model to see how average sale prices have moved over time. Use the optional model year "
-            "filter to isolate a specific vintage. Model year is useful to pinpoint the specific make and model vintage price trend. Leaving model year set to All Years may give a distorted view of the price trend."
-            "Note that filtering to a single model year (especially more recent years) can produce a sparse or empty chart for less commonly sold cars, "
+            "filter to isolate a specific vintage. Model year is useful to pinpoint the specific make and model vintage price trend. Leaving model year set to 'All Years' may give a distorted view of the price trend."
+            " Note that filtering to a single model year (especially more recent years) can produce a sparse or empty chart for less commonly sold cars, "
             "since months with fewer than 2 sales of that exact vintage are excluded to avoid misleading single-point spikes."
         )
 
@@ -215,7 +215,7 @@ if not df.empty:
 
     with tab2:
         st.subheader("Sales Volume Over Time")
-        st.caption("Cars sold per month across the whole platform. Here you can see the directly impact of seasonality.")
+        st.caption("Cars sold per month across the whole platform. Here you can see the direct impact of seasonality.")
 
         volume = df.groupby(['auction_year', 'auction_month']).size().reset_index(name='sales_count')
         volume['Date'] = pd.to_datetime(
@@ -236,7 +236,7 @@ if not df.empty:
     with tab3:
         st.subheader("Price Heatmap by Month & Year")
         st.caption("Each cell shows the average sale price for the corresponding month and year. Darker orange means higher prices. Reading across a row shows seasonal swings within a year; reading down a column shows whether a particular month trends up or down over time. "
-                   "One large insigh that sticks out to me is the serious increase in average sale price starting in 2022, likely as the site gained traction and momentum after being established for a year and a half.")
+                   "One insight that sticks out to me is the sizeable increase in average sale price starting in 2022, likely as the site gained traction and momentum after being established for a year and a half.")
 
         month_labels = {
             1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
@@ -265,7 +265,7 @@ if not df.empty:
 
     with tab4:
         st.subheader("Model Year Sweet Spot")
-        st.caption("Pick a make and model to see which production years command the highest average prices. This could be useful for pinpointing the exact vintage for which buyers are willing to pay a premium (although there is the caveat that newer cars will be more expensive inherently).")
+        st.caption("Pick a make and model to see which production years command the highest average prices. This could be useful for pinpointing the exact vintage for which buyers are willing to pay a premium (Users should take into account that newer cars will be more expensive inherently).")
 
         # Pre-compute valid combos: require at least 2 model years with ≥3 sales each.
         # A single qualifying model year produces a one-bar chart with nothing to compare against,
@@ -315,9 +315,9 @@ if not df.empty:
     with tab5:
         st.subheader("Depreciation Curves by Make")
         st.caption(
-            "Shows how average sale price relates to vehicle age at auction time for the top makes by sales volume. "
+            "Shows how average sale price relates to vehicle age for the top vehicle makes by sales volume. "
             "A downward slope indicates typical depreciation; a U-shape or upward curve suggests the model has crossed "
-            "into collector territory where older examples command a premium. One insight I pulled from this chart is that the spike for Porsche's at 25 years might correspond with their first cars being mass produced (i.e. the 996 911 which is widely available)."
+            "into collector territory where older vehicles command a premium. One insight I pulled from this chart is that the spike for Porsche's at 25 years might correspond with their first cars being mass produced (i.e., the 996 911 which is widely available)."
         )
 
         # Derive car age from existing columns (auction_year - model year).

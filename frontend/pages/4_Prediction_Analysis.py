@@ -58,7 +58,7 @@ df_pdp = load_pdp_data()
 st.title("📈 Prediction Analysis")
 st.markdown(
     "This page provides a look at how the price predictor model works and how well it performs. "
-    "The price predictor you used on the previous page is an XGBoost machine learning model trained on thousands of "
+    "The tool you used on the 'Price Predictor' page is an XGBoost machine learning model trained on thousands of "
     "historical Cars & Bids auction results. Rather than blindly trusting me that the model works, the charts below let you "
     "examine the model's accuracy, understand which inputs it relies on most heavily, and see how individual "
     "variables influence the predicted price. If you ever wonder why the predictor returned a certain number, "
@@ -71,7 +71,7 @@ st.subheader("1. Prediction Accuracy (Residual Analysis)")
 st.markdown(
     "Each point on this graph represents a car from the test data set. The cars are plotted by the model's price prediction against the actual sale price. "
     "Points along the dashed diagonal indicate accurate predictions. Points above the line sold for more than expected, which could potentially be"
-    "driven by auction dynamics, rarity, or condition factors not fully captured in the listing text. "
+    " driven by auction dynamics, rarity, or condition factors not fully captured in the listing text. "
     "Points below the line sold for less than expected. The color intensity of the points reflects the magnitude of the error, with blue indicating "
     "underestimates and orange indicating overestimates."
 )
@@ -104,9 +104,9 @@ st.divider()
 # residuals by make
 st.subheader("2. Prediction Bias by Make")
 st.markdown(
-    "Each box shows the distribution of prediction errors (Actual Price − Predicted Price) for that make across the test dataset. "
-    "A box to the right of zero means the model tends to underestimate that brand. This means buyers paid more than the model expected. "
-    "A box to the left of zero means the model overestimates. This means it predicted higher prices than what cars actually sold for. "
+    "Each box shows the distribution of prediction errors (Actual Price minus Predicted Price) for that make across the test dataset. "
+    "A box to the right of zero means the machine learning model tends to underestimate that brand. This means buyers paid more than the model expected. "
+    "A box to the left of zero means the machine learning model overestimates. This means it predicted higher prices than what cars actually sold for. "
     "Any make with fewer than 5 test set appearances was excluded."
 )
 

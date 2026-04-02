@@ -269,7 +269,7 @@ with tab4:
             
             return scatter + trendline
 
-        st.caption("Each dot is a real listing and the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail or have more to share. More apparently, there is a negaitive correlation with the word count in the 'Known Flaws' section. Charts are zoomed to the 95th percentile to hide outliers.")
+        st.caption("Each dot is a real listing and the trendline shows whether longer descriptions in that section correlate with higher or lower prices. A positive slope doesn't mean writing more words causes a higher sale price; it likely means sellers of more expensive cars tend to write more detail or have more to share. Interestingly, and as one might expect, there is a negaitive correlation with the word count in the 'Known Flaws' section. Charts are zoomed to the 95th percentile to hide outliers.")
         col1, col2 = st.columns(2)
         
         with col1:
@@ -282,7 +282,7 @@ with tab4:
 
 with tab5:
     st.subheader("'Buzzword' Impact Analyzer")
-    st.markdown("This chart tries to show which specific words or phrases extracted from the text are most associated with high or low sale prices")
+    st.markdown("This chart tries to show which specific words or phrases extracted from the text are most associated with high or low sale prices.")
 
     st.caption("These values show the average price difference between listings containing each word and those that don't. Please see the README.md for a full description of how these words were chosen. A word like 'performance' appearing with a large negative value doesn't mean writing it hurts your sale; it more likely means cheaper sporty cars use that word more often. Use this to understand what language tends to appear in different price brackets, not as writing advice.")
 
