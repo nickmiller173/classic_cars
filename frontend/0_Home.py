@@ -84,8 +84,8 @@ else:
 # header and intro copy
 st.title("🚗 Cars & Bids Price Intelligence")
 st.markdown(
-    "I built this platform because, like most of the Cars & Bids community, I enjoy tracking the prices "
-    "of rare enthusiast cars as well as finding out what quirks and features make them unique. My tool "
+    "I built this platform because, like most of the car enthusiast community, I enjoy tracking the prices "
+    "of rare enthusiast cars as well as finding out what features make them unique. My tool "
     "combines a predictive pricing engine with raw data analysis across **{:,} auctions** and "
     "**${:.0f}M in recorded sales** — offering any user an objective lens on what these cars are actually "
     "worth (and WHY)."
