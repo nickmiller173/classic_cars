@@ -10,13 +10,14 @@ The app is live at Streamlit Community Cloud and consists of five pages: a real-
 
 1. [Project Goals](#project-goals)
 2. [Architecture Overview](#architecture-overview)
-3. [Data](#data)
-4. [File-by-File Reference](#file-by-file-reference)
-5. [AWS Infrastructure](#aws-infrastructure)
-6. [Streamlit Frontend](#streamlit-frontend)
-7. [The ML Pipeline](#the-ml-pipeline)
-8. [Deployment Workflow](#deployment-workflow)
-9. [Quirks and Design Decisions](#quirks-and-design-decisions)
+3. [Beginner's Guide: Tools and Techniques](#beginners-guide-tools-and-techniques)
+4. [Data](#data)
+5. [File-by-File Reference](#file-by-file-reference)
+6. [AWS Infrastructure](#aws-infrastructure)
+7. [Streamlit Frontend](#streamlit-frontend)
+8. [The ML Pipeline](#the-ml-pipeline)
+9. [Deployment Workflow](#deployment-workflow)
+10. [Quirks and Design Decisions](#quirks-and-design-decisions)
 
 ---
 
@@ -64,7 +65,186 @@ Streamlit Community Cloud          ← hosts the frontend, calls API Gateway
 
 ---
 
-## Data
+## Beginner's Guide: Tools and Techniques
+
+This section explains every major tool and algorithmic technique used in the project in plain English. If you already know what Docker or XGBoost is, feel free to skip ahead. If you're newer to ML engineering or cloud deployment, this is the right starting point before diving into the rest of the README.
+
+---
+
+### Deployment Tools
+
+#### Docker
+Docker is a tool that packages an application and everything it needs to run — the code, the Python version, the installed libraries, the model files — into a single self-contained unit called a **container image**. You can think of it like a shipping container: it doesn't matter what machine it runs on, because the container carries its own environment with it.
+
+In this project, Docker is used to package the prediction model and its dependencies (scikit-learn, XGBoost, pandas, etc.) into an image that AWS Lambda can execute. This was necessary because the model artifacts alone exceed the size limit for Lambda's simpler zip-based deployment.
+
+**Why it's needed here:** The trained model needs a very specific environment to run (exact Python version, exact library versions). Docker guarantees that the environment on the developer's laptop matches exactly what runs in the cloud.
+
+---
+
+#### AWS Lambda
+AWS Lambda is a **serverless compute** service. "Serverless" doesn't mean there are no servers — it means you don't manage any. You upload your code (or a container image), define a trigger, and AWS runs the code on demand, billing only for the time it actually executes.
+
+When a user submits a car to the price predictor, their browser calls the Lambda function, which loads the model, runs inference, and returns a price — all within a few seconds. Between requests, Lambda is completely idle and costs nothing.
+
+**Why it's needed here:** A traditional server running 24/7 to serve occasional prediction requests would cost $20–50/month even with zero traffic. Lambda costs fractions of a cent per request. For a hobby project with unpredictable traffic, that difference is significant.
+
+**Cold starts:** Lambda doesn't keep your code loaded between requests. When a new request arrives after a period of inactivity, Lambda has to spin up the container, load Python, and deserialize the model from disk — this takes 20–60 seconds for large models. See the EventBridge section below for how this project mitigates cold starts.
+
+---
+
+#### AWS ECR (Elastic Container Registry)
+ECR is AWS's private storage service for Docker container images. Once you build a Docker image locally, you push it to ECR, and Lambda pulls it from there when it needs to run.
+
+**Why it's needed here:** Lambda needs to pull the container image from somewhere. ECR is the native AWS choice — it's private (your model artifacts aren't public), fast (it's in the same AWS region as Lambda), and integrates with Lambda's deployment settings without extra configuration.
+
+---
+
+#### AWS API Gateway
+API Gateway is the public HTTPS entry point in front of Lambda. It takes incoming HTTP requests from the internet, validates them, forwards them to Lambda, and returns the response to the caller.
+
+Without API Gateway, Lambda has no public URL. API Gateway provides the URL that the Streamlit frontend calls when a user submits a prediction request.
+
+**Why it's needed here:** Lambda functions are not directly accessible from the internet by default. API Gateway acts as the front door — it handles HTTPS, request routing, and rate limiting so the Lambda function only needs to worry about running inference.
+
+**Important constraint:** API Gateway enforces a hard 29-second maximum response time regardless of how long Lambda is configured to wait. A cold start that takes longer than 29 seconds will time out and return a 503 error to the user. This is a known AWS limitation.
+
+---
+
+#### AWS EventBridge (Scheduler)
+EventBridge is AWS's event routing and scheduling service. In this project it's used as a simple cron job: it sends a "warmup" ping to the Lambda function every 10 minutes.
+
+The Lambda handler detects the `{"warmup": true}` payload and returns immediately without running any inference. The point is just to hit the Lambda often enough that AWS keeps its container loaded in memory, avoiding the cold start penalty for real users.
+
+**Why it's needed here:** Without the warmup schedule, a user who visits the site after a 15–20 minute gap would trigger a cold start and potentially wait 30–60 seconds for a response — or see a timeout error entirely. The EventBridge schedule keeps the Lambda "warm" at a cost of essentially zero.
+
+---
+
+#### Streamlit
+Streamlit is a Python library that turns regular Python scripts into interactive web applications. You write Python — `st.slider(...)`, `st.chart(...)`, `st.button(...)` — and Streamlit handles the HTML, CSS, and JavaScript automatically. There is no separate frontend framework, no JavaScript, no REST API between the UI and the data logic.
+
+**Why it's needed here:** The entire frontend — dropdowns, charts, text inputs, metric cards — is written in pure Python. This lets a data scientist build and iterate on a functional web app without needing frontend engineering skills. The tradeoff is limited layout control and that every user interaction re-runs the entire Python script from top to bottom.
+
+---
+
+#### Streamlit Community Cloud
+Streamlit Community Cloud is a free hosting platform run by Streamlit (now Snowflake) specifically for Streamlit apps. You connect it to a public GitHub repository, point it at your main app file, and it deploys and hosts the app automatically. Every push to the main branch triggers a redeploy.
+
+**Why it's needed here:** It's free for public projects and requires zero DevOps — no server configuration, no nginx, no load balancer. The tradeoff is that the app can go to sleep after extended inactivity (similar to Lambda cold starts), but for a portfolio project this is a reasonable compromise.
+
+---
+
+#### Altair / Vega-Lite
+Altair is a Python library for building interactive charts. Under the hood it generates Vega-Lite specifications — a JSON grammar that the browser renders as SVG or Canvas charts with built-in tooltips, zoom, and pan. Unlike Matplotlib (which renders static images on the server), Altair charts are rendered entirely in the browser.
+
+**Why it's needed here:** Interactive tooltips, clean styling, and the ability to encode visual properties (color, size, position) as data-driven mappings rather than procedural drawing code. Altair's declarative syntax (`encode(x='Year:O', y='Price:Q', color='Make:N')`) also makes chart code more readable than Matplotlib's imperative API.
+
+---
+
+### Machine Learning Techniques
+
+#### XGBoost (Extreme Gradient Boosting)
+XGBoost is a **gradient boosted decision tree** algorithm. To understand it, start with a decision tree: a simple model that splits data into branches based on feature thresholds (e.g., "if mileage > 50,000 and make = Porsche, predict $X"). A single tree is fast but inaccurate. Random forests improve on this by averaging hundreds of independent trees. Gradient boosting goes further by training trees **sequentially**, where each new tree is specifically designed to correct the errors left by all previous trees.
+
+The "gradient" in gradient boosting refers to using calculus (gradient descent) to find the direction in which each new tree should correct the previous residuals most efficiently. XGBoost is a highly optimized implementation of this idea with built-in regularization to prevent overfitting.
+
+**Why it's used here:** XGBoost consistently outperforms simpler models on tabular data (rows and columns) with mixed feature types — exactly what this dataset looks like. It handles missing values natively, is robust to outliers, and benefits from the many engineered features in this pipeline. It outperformed Random Forest on the held-out test set, particularly at higher price points.
+
+---
+
+#### Random Forest
+Random Forest is an **ensemble** model: it trains hundreds of independent decision trees, each on a random subset of the training data and a random subset of features, then averages their predictions. The randomness prevents any single tree from memorizing the training data (overfitting), and averaging across many trees reduces variance.
+
+**Why it was considered here:** Random Forest is a strong baseline for tabular data and requires less hyperparameter tuning than XGBoost. It was trained alongside XGBoost and evaluated on the same held-out test set. XGBoost won on RMSE and MAPE, so Random Forest was not deployed — but it remains in the training notebook as a comparison point.
+
+---
+
+#### Log Transformation of Price
+The raw sale price distribution is highly right-skewed: most cars sell for $10k–$50k but a handful sell for $300k–$500k. Training a model directly on raw prices means those outliers dominate the loss function — the model spends most of its effort getting Ferrari prices right at the expense of $20k Honda accuracy.
+
+Applying `log1p(price)` (log of price + 1) compresses the right tail and makes the distribution roughly symmetric. The model is trained to predict log-price, and predictions are converted back to dollars with `np.expm1` (the inverse operation) at inference time.
+
+**Practical effect:** A model trained on log-price has roughly equal percentage-error sensitivity across all price segments. A $2,000 miss on a $15,000 car (13% error) and a $2,000 miss on a $150,000 car (1.3% error) are treated very differently in log-space, which is the right behavior for a pricing tool.
+
+---
+
+#### TF-IDF (Term Frequency–Inverse Document Frequency)
+TF-IDF is a technique for converting raw text into numbers that a machine learning model can use. It works in two steps:
+
+1. **Term Frequency (TF):** For each word in a document, count how often it appears relative to the total words in that document. A word that appears 10 times in a 100-word listing has TF = 0.10.
+
+2. **Inverse Document Frequency (IDF):** Down-weight words that appear in almost every document. If the word "car" appears in 30,000 out of 31,000 listings, it carries almost no distinguishing information. IDF is the log of (total documents / documents containing the word) — rare words get high IDF scores, near-universal words get scores close to zero.
+
+The final TF-IDF score for a word in a listing is TF × IDF. High scores mean "this word appears frequently in this listing AND is rare across listings overall" — exactly the kind of distinctive signal that's useful for prediction.
+
+**Why it's used here:** Each Cars & Bids listing contains multiple free-text fields written by the seller. TF-IDF converts those fields into a sparse numerical matrix where each column is a word or phrase and each row is a listing. The model can then learn which vocabulary patterns correlate with price.
+
+---
+
+#### SVD / Truncated SVD (Singular Value Decomposition)
+TF-IDF produces a matrix with potentially thousands of columns (one per unique word). Many of these columns are highly correlated — "carbon fiber" and "track car" tend to appear together — and feeding 2,500 correlated columns directly into a tree model is noisy and slow.
+
+Truncated SVD (also called LSA — Latent Semantic Analysis) is a dimensionality reduction technique that compresses the TF-IDF matrix down to a smaller number of **latent components**. Mathematically, SVD factorizes the matrix into its principal axes of variation and keeps only the top N. In practice, each component captures a "theme" — a blend of words that tend to co-occur — rather than a single word.
+
+In this project, TF-IDF → SVD reduces ~2,500 word columns to 20 dense latent components (`text_component_0` through `text_component_19`). These 20 numbers are what the XGBoost model actually receives as the "text" input.
+
+**Why it's used here:** Compressing text to 20 components reduces noise, removes collinearity between related terms, and keeps the feature space manageable. The tradeoff is interpretability — a single component can't be explained as "this is the JDM modification score." That's why all 20 components are collapsed into a single "Listing Description Text" bar in the SHAP chart.
+
+---
+
+#### SHAP (SHapley Additive exPlanations)
+SHAP is a method for explaining individual model predictions. For any single prediction, SHAP assigns each input feature a value representing how much it pushed the predicted price up or down compared to the average prediction.
+
+The theory comes from cooperative game theory: imagine each feature as a "player" in a game where the payoff is the prediction. SHAP computes the average marginal contribution of each feature across all possible orderings of features — this gives a fair, theoretically grounded attribution of the prediction to individual inputs.
+
+**Mean absolute SHAP** (used in the SHAP importance chart) averages the absolute value of each feature's SHAP contribution across all test set predictions. A feature with high mean absolute SHAP moves the prediction by a large amount on average — regardless of whether it tends to push prices up or down.
+
+**Why it's used here:** XGBoost is a "black box" — you can't look at it and understand why it predicted a specific price. SHAP makes the model interpretable by showing which features matter most and by how much. `TreeExplainer` (used here) is an exact, efficient SHAP implementation specifically for tree-based models like XGBoost.
+
+---
+
+#### NMF (Non-Negative Matrix Factorization)
+NMF is an unsupervised technique for discovering latent structure in a matrix. Given a matrix V (listings × TF-IDF features), NMF finds two smaller matrices W and H such that V ≈ W × H, with the constraint that all values must be non-negative.
+
+In practice this constraint matters: because values can't be negative, components can only add to each other — they can't cancel out. This produces **parts-based** decompositions where each component represents an additive theme. For text, each NMF component is a cluster of words that tend to co-occur, and each document gets a score for how strongly it belongs to each theme.
+
+**Why NMF over LDA (another popular topic model)?** LDA (Latent Dirichlet Allocation) assumes a probabilistic generative model for long documents. Auction listings are short, structured, and not very "document-like." NMF makes fewer distributional assumptions and tends to produce cleaner, more interpretable topics on short specialized text. Empirically, with N=4 topics, NMF produced four coherent archetypes (Comfort and Luxury, Imported and Modified, Performance and Track, Modern EV and Hybrid) that map clearly to real market segments.
+
+---
+
+#### Ridge Regression
+Ridge regression is a variant of linear regression that adds a penalty term to the loss function proportional to the sum of squared coefficients (called L2 regularization). This penalty forces the model to keep coefficients small and spread the explanatory power across correlated features rather than assigning extreme values to a few.
+
+In ordinary linear regression, if two features are highly correlated (e.g., "ceramic" and "brake" often appear together), the model can assign a huge positive coefficient to one and a huge negative coefficient to the other — they cancel out mathematically but the individual coefficients are meaningless. Ridge prevents this by penalizing large coefficients.
+
+**Why it's used for buzzwords here:** The TF-IDF feature matrix has 2,500 columns, many of which are correlated automotive terms. Ridge regression (`alpha=10`) stabilizes the coefficients so each word's estimated price correlation is interpretable in isolation. Higher alpha = more regularization = smaller, more stable coefficients. The coefficients are used directly as the "impact scores" shown in the Auction Buzzwords chart.
+
+---
+
+#### TargetEncoder
+TargetEncoder replaces a categorical value (e.g., "Porsche 911") with the mean of the target variable (log-price) for all training rows with that value. So if all Porsche 911s in the training set had a mean log-price of 11.2, the model receives 11.2 as a numeric feature instead of a one-hot-encoded string.
+
+**Why it's used here:** High-cardinality categorical features like `make_model_year` have thousands of unique values (e.g., "Porsche 911 2019", "BMW M3 2021", ...). One-hot encoding these would produce thousands of binary columns, most of which are zero for any given row. TargetEncoder collapses each combination to a single meaningful number while preserving the pricing information. Cross-validation folds ensure the encoder never sees the target from the row being encoded, preventing data leakage.
+
+---
+
+#### Partial Dependence Plots (PDP)
+A partial dependence plot shows how a model's predicted output changes as one input feature varies, while all other features are held at their average values. For example, a PDP for mileage shows: "if we could hold every other property of a car constant and only change mileage from 0 to 150,000 miles, how would the predicted price change?"
+
+In practice this is computed by taking every row in the dataset, overwriting the feature of interest with a grid of values, running predictions for all of them, and averaging the predictions at each grid point.
+
+**Why it's used here:** PDPs reveal whether the model has learned sensible relationships — does predicted price fall as mileage increases? Does it rise with higher S&P 500 values? They also reveal non-linear patterns: the mileage PDP might show a steep initial price drop that flattens after 80,000 miles, which a simple correlation wouldn't capture. PDPs are distinct from SHAP: SHAP explains how much each feature contributed to a specific prediction, while PDPs show the average marginal effect of a feature across the full dataset.
+
+---
+
+#### TimeSeriesSplit Cross-Validation
+Standard k-fold cross-validation randomly splits data into training and validation folds. For time-series data like auction results, this causes **data leakage**: the model sees future auctions during training and is evaluated on past auctions, making validation accuracy artificially optimistic.
+
+TimeSeriesSplit always trains on earlier data and validates on later data. Fold 1 might train on months 1–6 and validate on months 7–8; fold 2 trains on months 1–8 and validates on months 9–10, and so on. This mimics real deployment: the model is always predicting the future from the past.
+
+**Why it's used here:** Cars & Bids auction prices are influenced by macroeconomic conditions (S&P 500, used car market cycles) that change over time. Training on future data to predict past prices would give an unrealistically clean evaluation. TimeSeriesSplit ensures the model is evaluated on a true holdout period.
+
+---
 
 ### Source
 All data was scraped from publicly available Cars & Bids past auction pages. The raw scrape file (`cars_and_bids_full_history_v3.csv`) is the source of truth for the entire project. It is **gitignored** due to size but must be present locally to re-run preprocessing.
