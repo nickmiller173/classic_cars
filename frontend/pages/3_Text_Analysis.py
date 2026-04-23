@@ -22,7 +22,7 @@ hr { border-color: #C4A882 !important; }
 """, unsafe_allow_html=True)
 
 st.title("📝 Advanced Text Insights")
-st.markdown("By applying Natural Language Processing (NLP) techniques to thousands of unstructured auction descriptions, I was able to extract hidden themes that may drive vehicle valuations on Cars & Bids.")
+st.markdown("By applying Natural Language Processing (NLP) techniques to thousands of unstructured auction descriptions, I was able to extract hidden themes that may drive vehicle valuations on Cars & Bids auctions.")
 
 st.info(
         "A general note: these figures show **correlation, not causation.** Each bar reflects the average price difference between "

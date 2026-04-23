@@ -103,7 +103,7 @@ st.markdown(
     "what a vehicle is likely to sell for at auction. I built this tool for two primary use cases:"
 )
 st.markdown(
-    "- **Evaluating an active listing:** If a car is currently up for auction on Cars & Bids, you can enter its specs and "
+    "- **Evaluating an active listing:** If a car is currently up for auction, you can enter its specs and "
     "paste them in the listing text below. The predicted price and historical averages will help you assess whether the "
     "current bid represents fair value, a potential deal, or an overpriced vehicle.\n"
     "- **Exploring a car's market value:** Even without an active listing, you can enter any vehicle's specifications "

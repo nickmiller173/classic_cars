@@ -82,7 +82,7 @@ else:
     data_through = None
 
 # header and intro copy
-st.title("🚗 Cars & Bids Price Intelligence")
+st.title("🚗 Car Auction Price Intelligence Platform")
 st.markdown(
     "I built this platform because, like most of the car enthusiast community, I enjoy tracking the prices "
     "of rare enthusiast cars as well as finding out what features make them unique. My tool "
@@ -93,7 +93,7 @@ st.markdown(
 )
 if data_through:
     st.caption(
-        f"Note: the data I collected is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
+        f"Note: The data reflected on this app is collected from Cars & Bids. The data is only current through **{data_through}**. The auction results, model predictions, and data insights do not reflect "
         "listings added after this date. All of the figures are derived from publicly available auction records "
         "and may not capture every transaction or reflect real-time platform data. "
         "For auctions that did not meet the seller's reserve, the highest recorded bid was treated as the sale price."
